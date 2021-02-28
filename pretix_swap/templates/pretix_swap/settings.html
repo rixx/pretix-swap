@@ -1,5 +1,6 @@
 {% extends "pretixcontrol/event/settings_base.html" %}
 {% load i18n %}
+{% load static %}
 {% load bootstrap3 %}
 
 {% block title %} {% trans "Swap Settings" %} {% endblock %}
@@ -19,4 +20,6 @@
             </button>
         </div>
     </form>
+
+    <script src="{% static "pretix_swap/settings.js" %}"></script>
 {% endblock %}
