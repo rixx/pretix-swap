@@ -3,22 +3,80 @@
 {% load static %}
 {% load bootstrap3 %}
 
-{% block title %} {% trans "Swap Settings" %} {% endblock %}
+{% block title %} {% trans "Swap Configuration" %} {% endblock %}
 
 {% block inside %}
-    <h1>{% trans "Swap Settings" %}</h1>
+    <h1>{% trans "Swap Configuration" %}</h1>
     <form action="" method="post" class="form-horizontal">
         {% csrf_token %}
         {% bootstrap_form_errors form %}
-        {% bootstrap_field form.swap_orderpositions layout="control" %}
-        {% bootstrap_field form.swap_orderpositions_specific layout="control" %}
-        {% bootstrap_field form.cancel_orderpositions layout="control" %}
-        {% bootstrap_field form.cancel_orderpositions_specific layout="control" %}
-        <div class="form-group submit-group">
-            <button type="submit" class="btn btn-primary btn-save">
-                {% trans "Save" %}
-            </button>
+        <div class="tabbed-form">
+            <fieldset>
+                <legend>{% trans "Settings" %}</legend>
+                {% bootstrap_field form.swap_orderpositions layout="control" %}
+                {% bootstrap_field form.swap_orderpositions_specific layout="control" %}
+                {% bootstrap_field form.cancel_orderpositions layout="control" %}
+                {% bootstrap_field form.cancel_orderpositions_specific layout="control" %}
+                <div class="form-group submit-group">
+                    <button type="submit" class="btn btn-primary btn-save">
+                        {% trans "Save" %}
+                    </button>
+                </div>
+            </fieldset>
+            <fieldset>
+                <legend>{% trans "Swap Groups" %}</legend>
+                <table class="table table-condensed table-hover">
+                    <thead>
+                    <tr>
+                        <th>{% trans "Swap group" %}</th>
+                        <th>{% trans "Group A" %}</th>
+                        <th>{% trans "Group B" %}</th>
+                        <th></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for sg in swap_groups %}
+                    <tr>
+                        <td>
+                            <a href="{% url "plugins:pretix_swap:settings.detail" organizer=request.organizer.slug event=request.event.slug pk=sg.pk %}">
+                                {{ sg.name }}
+                            </a>
+                        </td>
+                        <td>
+                            {% for item in sg.left.all %}
+                                {{ item.name }}<br>
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {% for item in sg.right.all %}
+                                {{ item.name }}<br>
+                            {% endfor %}
+                        </td>
+                        <td class="text-right">
+                            <a href="{% url "plugins:pretix_swap:settings.detail" organizer=request.organizer.slug event=request.event.slug pk=sg.pk %}"
+                               class="btn btn-default btn-sm">
+                                <i class="fa fa-edit"></i>
+                            </a>
+                            <a href="{% url "plugins:pretix_swap:settings.delete" organizer=request.event.organizer.slug event=request.event.slug pk=sg.pk %}"
+                               class="btn btn-danger btn-sm">
+                                <i class="fa fa-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                        <tr><td>{% trans "No swap groups yet" %}</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                <div class="form-group submit-group">
+                    <a class="btn btn-primary btn-save" href="{% url "plugins:pretix_swap:settings.new" event=request.event.slug organizer=request.organizer.slug %}">
+                        <i class="fa fa-plus"></i>
+                        {% trans "New Swap Group" %}
+                    </a>
+                </div>
+            </fieldset>
         </div>
+
     </form>
 
     <script src="{% static "pretix_swap/settings.js" %}"></script>

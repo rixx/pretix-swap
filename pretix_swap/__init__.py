@@ -15,7 +15,9 @@ class PluginApp(PluginConfig):
     class PretixPluginMeta:
         name = gettext_lazy("Swap tickets with other attendees")
         author = "Tobias Kunze"
-        description = gettext_lazy("Swap tickets, anonymously or with specific other attendees. Also supports canceling tickets if (and only if) another ticket is purchased.")
+        description = gettext_lazy(
+            "Swap tickets, anonymously or with specific other attendees. Also supports canceling tickets if (and only if) another ticket is purchased."
+        )
         visible = True
         version = __version__
         category = "FEATURE"
