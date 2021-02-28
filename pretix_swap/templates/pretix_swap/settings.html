@@ -1,0 +1,22 @@
+{% extends "pretixcontrol/event/settings_base.html" %}
+{% load i18n %}
+{% load bootstrap3 %}
+
+{% block title %} {% trans "Swap Settings" %} {% endblock %}
+
+{% block inside %}
+    <h1>{% trans "Swap Settings" %}</h1>
+    <form action="" method="post" class="form-horizontal">
+        {% csrf_token %}
+        {% bootstrap_form_errors form %}
+        {% bootstrap_field form.swap_orderpositions layout="control" %}
+        {% bootstrap_field form.swap_orderpositions_specific layout="control" %}
+        {% bootstrap_field form.cancel_orderpositions layout="control" %}
+        {% bootstrap_field form.cancel_orderpositions_specific layout="control" %}
+        <div class="form-group submit-group">
+            <button type="submit" class="btn btn-primary btn-save">
+                {% trans "Save" %}
+            </button>
+        </div>
+    </form>
+{% endblock %}
