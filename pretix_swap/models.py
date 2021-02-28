@@ -45,7 +45,7 @@ class SwapState(models.Model):
         CANCELATION_COMPLETED = "cc"
 
     position = models.ForeignKey(
-        "pretixbase.OrderPosition", related_name="swap_state", on_delete=models.CASCADE
+        "pretixbase.OrderPosition", related_name="swap_states", on_delete=models.CASCADE
     )
     partner = models.ForeignKey(
         "pretixbase.OrderPosition",
@@ -66,3 +66,31 @@ class SwapState(models.Model):
     state = models.CharField(max_length=2, choices=SwapStates.choices)
 
     objects = ScopedManager(organizer="position__order__event__organizer")
+
+    def get_notification(self):
+        texts = {
+            self.SWAP_REQUESTED: _(
+                "You have requested to swap this prodcut. Please wait until somebody requests a matching swap."
+            ),
+            self.SWAP_SPECIFIC_REQUESTED: _(
+                "You have requested to swap this product with somebody specific. Please wait until they enter the swap code that you have given them."
+            ),
+            self.SWAP_COMPLETED: _("You have completed the swap of this product."),
+            self.CANCELATION_REQUESTED: _(
+                "You have requested to cancel this product. Please wait until somebody from the waiting list orders and pays a matching product."
+            ),
+            self.CANCELATION_SPECIFIC_REQUESTED: _(
+                "You have requested to cancel this product and give your place to somebody else. Please wait until they have completed their registration."
+            ),
+            self.CANCELATION_COMPLETED: _(
+                "You have completed the cancelation of this position."
+            ),
+        }
+        return texts[self.state]
+
+    def get_notification_actions(self):
+        if self.state in [self.SWAP_COMPLETED, self.CANCELATION_COMPLETED]:
+            return []
+        if self.partner or self.partner_cart:
+            return ["view"]
+        return ["view", "abort"]

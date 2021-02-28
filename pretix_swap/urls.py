@@ -24,3 +24,23 @@ urlpatterns = [
         name="settings.delete",
     ),
 ]
+
+from pretix.multidomain import event_url
+
+event_patterns = [
+    event_url(
+        r"^order/(?P<order>[^/]+)/(?P<secret>[A-Za-z0-9]+)/swap/$",
+        views.SwapOverview,
+        name="swap.list",
+    ),
+    event_url(
+        r"^order/(?P<order>[^/]+)/(?P<secret>[A-Za-z0-9]+)/swap/new$",
+        views.SwapCreate,
+        name="swap.new",
+    ),
+    event_url(
+        r"^order/(?P<order>[^/]+)/(?P<secret>[A-Za-z0-9]+)/swap/(?P<pk>[0-9]+)/cancel$",
+        views.SwapCancel,
+        name="swap.cancel",
+    ),
+]

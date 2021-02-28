@@ -2,10 +2,12 @@ from django.contrib import messages
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
-from django.views.generic import CreateView, DeleteView, UpdateView
+from django.views.generic import CreateView, DeleteView, TemplateView, UpdateView
 from pretix.base.models.event import Event
 from pretix.control.permissions import EventPermissionRequiredMixin
 from pretix.control.views.event import EventSettingsFormView, EventSettingsViewMixin
+from pretix.presale.views import EventViewMixin
+from pretix.presale.views.order import OrderDetailMixin
 
 from .forms import SwapGroupForm, SwapSettingsForm
 from .models import SwapGroup
@@ -110,3 +112,15 @@ class SwapGroupDelete(EventPermissionRequiredMixin, DeleteView):
                 "event": self.request.event.slug,
             },
         )
+
+
+class SwapOverview(EventViewMixin, OrderDetailMixin, TemplateView):
+    template_name = "pretix_swap/swap.html"
+
+
+class SwapCreate(EventViewMixin, OrderDetailMixin, TemplateView):
+    template_name = "pretix_swap/cancel.html"
+
+
+class SwapCancel(EventViewMixin, OrderDetailMixin, TemplateView):
+    template_name = "pretix_swap/cancel.html"
