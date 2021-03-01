@@ -62,14 +62,14 @@ def navbar_info(sender, request, **kwargs):
 
 @receiver(order_info_top, dispatch_uid="swap_order_info_top")
 def notifications_order_info_top(sender, request, order, **kwargs):
-    from .models import SwapState
+    from .models import SwapRequest
 
     if not order.status == "p":
         return
     event = request.event
     notifications = []
 
-    states = SwapState.objects.filter(position__order=order).order_by("state")
+    states = SwapRequest.objects.filter(position__order=order).order_by("state")
     if states:
         notifications.append(
             {
@@ -110,13 +110,13 @@ def order_info_bottom(sender, request, order, **kwargs):
     if not order.status == "p":
         return
 
-    from .models import SwapState
+    from .models import SwapRequest
     from .utils import get_applicable_items
 
     event = request.event
     items = get_applicable_items(event)
 
-    states = SwapState.objects.filter(position__order=order).order_by(
+    states = SwapRequest.objects.filter(position__order=order).order_by(
         "position__positionid"
     )
     can_swap = (

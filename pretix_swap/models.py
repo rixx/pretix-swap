@@ -42,27 +42,27 @@ def generate_swap_code():
     )
 
 
-class SwapState(models.Model):
-    class SwapStates(models.TextChoices):
+class SwapRequest(models.Model):
+    class States(models.TextChoices):
         REQUESTED = "r"
         COMPLETED = "c"
 
-    class SwapTypes(models.TextChoices):
+    class Types(models.TextChoices):
         SWAP = "s"
         CANCELATION = "c"
 
-    class SwapMethods(models.TextChoices):
+    class Methods(models.TextChoices):
         FREE = "f", _("I know who to swap with.")
         SPECIFIC = "s", _("Give my place to the next person in line.")
 
     state = models.CharField(
-        max_length=1, choices=SwapStates.choices, default=SwapStates.REQUESTED
+        max_length=1, choices=States.choices, default=States.REQUESTED
     )
-    swap_type = models.CharField(max_length=1, choices=SwapTypes.choices)
+    swap_type = models.CharField(max_length=1, choices=Types.choices)
     swap_method = models.CharField(
         max_length=1,
-        choices=SwapMethods.choices,
-        default=SwapMethods.FREE,
+        choices=Methods.choices,
+        default=Methods.FREE,
         verbose_name=_("How do you want to handle the ticket?"),
     )
 
@@ -91,57 +91,37 @@ class SwapState(models.Model):
 
     def get_notification(self):
         texts = {
-            (self.SwapTypes.SWAP, self.SwapStates.REQUESTED, self.SwapMethods.FREE): _(
+            (self.Types.SWAP, self.States.REQUESTED, self.Methods.FREE): _(
                 "You have requested to swap this prodcut. Please wait until somebody requests a matching swap."
             ),
-            (
-                self.SwapTypes.SWAP,
-                self.SwapStates.REQUESTED,
-                self.SwapMethods.SPECIFIC,
-            ): _(
+            (self.Types.SWAP, self.States.REQUESTED, self.Methods.SPECIFIC,): _(
                 "You have requested to swap this product with somebody specific. Please wait until they enter the swap code that you have given them."
             ),
-            (self.SwapTypes.SWAP, self.SwapStates.COMPLETED, self.SwapMethods.FREE): _(
+            (self.Types.SWAP, self.States.COMPLETED, self.Methods.FREE): _(
                 "You have completed the swap of this product."
             ),
-            (
-                self.SwapTypes.SWAP,
-                self.SwapStates.COMPLETED,
-                self.SwapMethods.SPECIFIC,
-            ): _(
+            (self.Types.SWAP, self.States.COMPLETED, self.Methods.SPECIFIC,): _(
                 "You have completed the swap of this product with your chosen partner."
             ),
-            (
-                self.SwapTypes.CANCELATION,
-                self.SwapStates.REQUESTED,
-                self.SwapMethods.FREE,
-            ): _(
+            (self.Types.CANCELATION, self.States.REQUESTED, self.Methods.FREE,): _(
                 "You have requested to cancel this product. Please wait until somebody from the waiting list orders and pays a matching product."
             ),
-            (
-                self.SwapTypes.CANCELATION,
-                self.SwapStates.REQUESTED,
-                self.SwapMethods.SPECIFIC,
-            ): _(
+            (self.Types.CANCELATION, self.States.REQUESTED, self.Methods.SPECIFIC,): _(
                 "You have requested to cancel this product and give your place to somebody else. Please wait until they have completed their registration."
             ),
             (
-                self.SwapTypes.CANCELATION,
-                self.SwapStates.COMPLETED,
-                self.SwapMethods.FREE,
+                self.Types.CANCELATION,
+                self.States.COMPLETED,
+                self.Methods.FREE,
             ): _("You have completed the cancelation of this position."),
-            (
-                self.SwapTypes.CANCELATION,
-                self.SwapStates.COMPLETED,
-                self.SwapMethods.SPECIFIC,
-            ): _(
+            (self.Types.CANCELATION, self.States.COMPLETED, self.Methods.SPECIFIC,): _(
                 "You have completed the cancelation of this position with your chosen partner."
             ),
         }
         return texts[(self.swap_type, self.state, self.swap_method)]
 
     def get_notification_actions(self):
-        if self.state == self.SwapStates.COMPLETED:
+        if self.state == self.States.COMPLETED:
             return []
         if self.partner or self.partner_cart:
             return []  # ["view"]
@@ -158,7 +138,7 @@ class SwapState(models.Model):
     def attempt_swap(self):
         # TODO attempt to find a swap partner
         # Must not be in specific mode
-        if self.swap_method != self.SwapMethods.FREE:
+        if self.swap_method != self.Methods.FREE:
             return
         # select items that would fit
         # and note the price matching setting
@@ -173,5 +153,5 @@ class SwapState(models.Model):
 
     def attempt_cancelation(self):
         # TODO attempt to find a cancelation target
-        if self.swap_method != self.SwapMethods.FREE:
+        if self.swap_method != self.Methods.FREE:
             return

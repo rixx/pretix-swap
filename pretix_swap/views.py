@@ -20,7 +20,7 @@ from pretix.presale.views import EventViewMixin
 from pretix.presale.views.order import OrderDetailMixin
 
 from .forms import SwapGroupForm, SwapRequestForm, SwapSettingsForm
-from .models import SwapGroup, SwapState
+from .models import SwapGroup, SwapRequest
 
 
 class SwapStats(EventPermissionRequiredMixin, TemplateView):
@@ -29,45 +29,45 @@ class SwapStats(EventPermissionRequiredMixin, TemplateView):
 
     def get_context_data(self, *args, **kwargs):
         ctx = super().get_context_data(*args, **kwargs)
-        requests = SwapState.objects.filter(position__order__event=self.request.event)
+        requests = SwapRequest.objects.filter(position__order__event=self.request.event)
         ctx["by_state"] = {
             "swap": {
                 "open": len(
                     requests.filter(
-                        swap_type=SwapState.SwapTypes.SWAP,
-                        state=SwapState.SwapStates.REQUESTED,
+                        swap_type=SwapRequest.Types.SWAP,
+                        state=SwapRequest.State.REQUESTED,
                     )
                 ),
                 "done": len(
                     requests.filter(
-                        swap_type=SwapState.SwapTypes.SWAP,
-                        state=SwapState.SwapStates.COMPLETED,
+                        swap_type=SwapRequest.Types.SWAP,
+                        state=SwapRequest.State.COMPLETED,
                     )
                 ),
                 "total": len(
                     requests.filter(
-                        swap_type=SwapState.SwapTypes.SWAP,
-                        state=SwapState.SwapStates.REQUESTED,
+                        swap_type=SwapRequest.Types.SWAP,
+                        state=SwapRequest.State.REQUESTED,
                     )
                 ),
             },
             "cancel": {
                 "open": len(
                     requests.filter(
-                        swap_type=SwapState.SwapTypes.CANCELATION,
-                        state=SwapState.SwapStates.REQUESTED,
+                        swap_type=SwapRequest.Types.CANCELATION,
+                        state=SwapRequest.State.REQUESTED,
                     )
                 ),
                 "done": len(
                     requests.filter(
-                        swap_type=SwapState.SwapTypes.CANCELATION,
-                        state=SwapState.SwapStates.COMPLETED,
+                        swap_type=SwapRequest.Types.CANCELATION,
+                        state=SwapRequest.State.COMPLETED,
                     )
                 ),
                 "total": len(
                     requests.filter(
-                        swap_type=SwapState.SwapTypes.CANCELATION,
-                        state=SwapState.SwapStates.REQUESTED,
+                        swap_type=SwapRequest.Types.CANCELATION,
+                        state=SwapRequest.State.REQUESTED,
                     )
                 ),
             },
@@ -196,10 +196,10 @@ class SwapCancel(EventViewMixin, OrderDetailMixin, TemplateView):
 
     def get_object(self):
         return get_object_or_404(
-            SwapState,
+            SwapRequest,
             position__order=self.order,
             position__pk=self.kwargs["pk"],
-            state=SwapState.SwapStates.REQUESTED,
+            state=SwapRequest.State.REQUESTED,
         )
 
     def get_context_data(self, *args, **kwargs):
@@ -233,9 +233,9 @@ class SwapCreate(EventViewMixin, OrderDetailMixin, FormView):
     def swap_actions(self):
         actions = []
         if self.request.event.settings.swap_orderpositions:
-            actions.append(SwapState.SwapTypes.SWAP)
+            actions.append(SwapRequest.Types.SWAP)
         if self.request.event.settings.cancel_orderpositions:
-            actions.append(SwapState.SwapTypes.CANCELATION)
+            actions.append(SwapRequest.Types.CANCELATION)
         return actions
 
     def get_form_kwargs(self, *args, **kwargs):
@@ -254,11 +254,11 @@ class SwapCreate(EventViewMixin, OrderDetailMixin, FormView):
     def form_valid(self, form):
         self.form = form
         instance = form.save()
-        if instance.state == SwapState.SwapStates.COMPLETED:
+        if instance.state == SwapRequest.State.COMPLETED:
             messages.success(
                 self.request, _("We received your request and matched you directly!")
             )
-        elif instance.swap_method == SwapState.SwapMethods.FREE:
+        elif instance.swap_method == SwapRequest.Methods.FREE:
             messages.success(
                 self.request,
                 _(

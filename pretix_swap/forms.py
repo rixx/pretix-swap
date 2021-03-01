@@ -6,7 +6,7 @@ from i18nfield.forms import I18nModelForm
 from pretix.base.forms import SettingsForm
 from pretix.base.models import Item
 
-from .models import SwapGroup, SwapState
+from .models import SwapGroup, SwapRequest
 from .utils import get_applicable_items
 
 
@@ -113,7 +113,7 @@ class SwapRequestForm(forms.ModelForm):
             if position.item in items
             and (
                 all(
-                    state.state == SwapState.SwapStates.COMPLETED
+                    state.state == SwapRequest.States.COMPLETED
                     for state in position.swap_states.all()
                 )
             )
@@ -129,13 +129,13 @@ class SwapRequestForm(forms.ModelForm):
         else:  # We can both swap and cancel
             self.fields["swap_type"] = forms.ChoiceField(
                 choices=[
-                    (SwapState.SwapTypes.SWAP, _("Request a swap")),
-                    (SwapState.SwapTypes.CANCELATION, _("Request cancelation")),
+                    (SwapRequest.Types.SWAP, _("Request a swap")),
+                    (SwapRequest.Types.CANCELATION, _("Request cancelation")),
                 ],
                 label=_("What do you want to do?"),
             )
         if (
-            SwapState.SwapTypes.SWAP in swap_actions
+            SwapRequest.Types.SWAP in swap_actions
             and self.event.settings.swap_orderpositions_specific
         ):
             self.fields["swap_code"] = forms.CharField(
@@ -146,7 +146,7 @@ class SwapRequestForm(forms.ModelForm):
                 ),
             )
         if (
-            SwapState.SwapTypes.CANCELATION in swap_actions
+            SwapRequest.Types.CANCELATION in swap_actions
             and self.event.settings.cancel_orderpositions_specific
         ):
             self.fields["cancel_code"] = forms.CharField(
@@ -161,21 +161,21 @@ class SwapRequestForm(forms.ModelForm):
 
     def save(self):
         data = self.cleaned_data
-        instance = SwapState.objects.create(
+        instance = SwapRequest.objects.create(
             position=data["position"],
-            state=SwapState.SwapStates.REQUESTED,
+            state=SwapRequest.States.REQUESTED,
             swap_type=data.get("swap_type") or self.swap_type,
-            swap_method=data.get("swap_method") or SwapState.SwapMethods.FREE,
+            swap_method=data.get("swap_method") or SwapRequest.Methods.FREE,
         )
-        if instance.swap_type == SwapState.SwapTypes.SWAP:
+        if instance.swap_type == SwapRequest.Types.SWAP:
             if data.get("swap_code"):
                 instance.swap_with(data.get("swap_code"))
-            elif instance.swap_method == SwapState.SwapMethods.FREE:
+            elif instance.swap_method == SwapRequest.Methods.FREE:
                 instance.attempt_swap()
-        elif instance.swap_type == SwapState.SwapTypes.CANCELATION:
+        elif instance.swap_type == SwapRequest.Types.CANCELATION:
             if data.get("cancel_code"):
                 instance.cancel_for(data.get("swap_code"))
-            elif instance.swap_method == SwapState.SwapMethods.FREE:
+            elif instance.swap_method == SwapRequest.Methods.FREE:
                 instance.attempt_swap()
         return instance
 
@@ -183,15 +183,15 @@ class SwapRequestForm(forms.ModelForm):
         data = self.cleaned_data.get("swap_code")
         if not data:
             return data
-        if self.action and self.action != SwapState.SwapTypes.SWAP:
+        if self.action and self.action != SwapRequest.Types.SWAP:
             return
-        if self.cleaned_data.get("action") != SwapState.SwapTypes.SWAP:
+        if self.cleaned_data.get("action") != SwapRequest.Types.SWAP:
             return
 
-        partner = SwapState.objects.filter(
+        partner = SwapRequest.objects.filter(
             position__order__event=self.event,
             swap_code=data,
-            state=SwapState.SwapStates.REQUESTED,
+            state=SwapRequest.States.REQUESTED,
         ).first()
         if not partner:
             raise ValidationError(_("Unknown swap code!"))
@@ -203,16 +203,16 @@ class SwapRequestForm(forms.ModelForm):
         data = self.cleaned_data.get("cancel_code")
         if not data:
             return data
-        if self.action and self.action != SwapState.SwapTypes.CANCELATION:
+        if self.action and self.action != SwapRequest.Types.CANCELATION:
             return
-        if self.cleaned_data.get("action") != SwapState.SwapTypes.CANCELATION:
+        if self.cleaned_data.get("action") != SwapRequest.Types.CANCELATION:
             return
 
         # TODO find cart or … something? help?
         return data
 
     class Meta:
-        model = SwapState
+        model = SwapRequest
         field_classes = {
             "position": SafeModelChoiceField,
         }
