@@ -10,10 +10,10 @@ def get_swappable_items(item, event, groups=None):
     groups = groups or event.swap_groups.all().prefetch_related("left", "right")
     result = set()
     for group in groups:
-        if item in groups.left.all():
-            result |= set(groups.right.all())
-        elif item in groups.right.all():
-            result |= set(groups.left.all())
+        if item in group.left.all():
+            result |= set(group.right.all())
+        elif item in group.right.all():
+            result |= set(group.left.all())
     return result
 
 

@@ -7,7 +7,7 @@ from pretix.base.forms import SettingsForm
 from pretix.base.models import Item
 
 from .models import SwapGroup, SwapRequest
-from .utils import get_applicable_items
+from .utils import get_applicable_items, get_swappable_items
 
 
 class SwapSettingsForm(SettingsForm):
@@ -107,8 +107,8 @@ class SwapRequestForm(forms.ModelForm):
         initial_position = kwargs.pop("position", None)
         super().__init__(*args, **kwargs)
         items = get_applicable_items(self.event)
-        positions = [
-            position.pk
+        relevant_positions = [
+            position
             for position in order.positions.all()
             if position.item in items
             and (
@@ -119,10 +119,27 @@ class SwapRequestForm(forms.ModelForm):
             )
         ]
         self.fields["position"] = PositionModelChoiceField(
-            self.order.positions.filter(pk__in=positions),
+            self.order.positions.filter(pk__in=[p.pk for p in relevant_positions]),
             initial=initial_position,
             label=_("Which item do you want to change?"),
         )
+        for position in relevant_positions:
+            field = forms.ModelChoiceField(
+                Item.objects.filter(
+                    pk__in=[
+                        item.pk
+                        for item in get_swappable_items(
+                            position.item, position.order.event
+                        )
+                    ]
+                ),
+                label=_("Which product do you want instead?"),
+                required=False,
+                initial=None,
+            )
+            field.position = position
+            self.fields[f"position_choice_{position.pk}"] = field
+
         self.action = None
         if len(swap_actions) == 1:
             self.swap_type = swap_actions[0]
@@ -133,6 +150,9 @@ class SwapRequestForm(forms.ModelForm):
                     (SwapRequest.Types.CANCELATION, _("Request cancelation")),
                 ],
                 label=_("What do you want to do?"),
+                help_text=_(
+                    "Leave this field empty if you're okay with any of these options.",
+                ),
             )
         if (
             SwapRequest.Types.SWAP in swap_actions
@@ -159,10 +179,19 @@ class SwapRequestForm(forms.ModelForm):
         if "cancel_code" not in self.fields and "swap_code" not in self.fields:
             self.fields.pop("swap_method")
 
+    @property
+    def position_fields(self):
+        return [
+            self[name]
+            for name in self.fields.keys()
+            if name.startswith("position_choice_")
+        ]
+
     def save(self):
         data = self.cleaned_data
         instance = SwapRequest.objects.create(
             position=data["position"],
+            target_item=data.get(f"position{data['position'].pk}"),
             state=SwapRequest.States.REQUESTED,
             swap_type=data.get("swap_type") or self.swap_type,
             swap_method=data.get("swap_method") or SwapRequest.Methods.FREE,

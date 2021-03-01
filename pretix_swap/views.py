@@ -35,19 +35,19 @@ class SwapStats(EventPermissionRequiredMixin, TemplateView):
                 "open": len(
                     requests.filter(
                         swap_type=SwapRequest.Types.SWAP,
-                        state=SwapRequest.State.REQUESTED,
+                        state=SwapRequest.States.REQUESTED,
                     )
                 ),
                 "done": len(
                     requests.filter(
                         swap_type=SwapRequest.Types.SWAP,
-                        state=SwapRequest.State.COMPLETED,
+                        state=SwapRequest.States.COMPLETED,
                     )
                 ),
                 "total": len(
                     requests.filter(
                         swap_type=SwapRequest.Types.SWAP,
-                        state=SwapRequest.State.REQUESTED,
+                        state=SwapRequest.States.REQUESTED,
                     )
                 ),
             },
@@ -55,19 +55,19 @@ class SwapStats(EventPermissionRequiredMixin, TemplateView):
                 "open": len(
                     requests.filter(
                         swap_type=SwapRequest.Types.CANCELATION,
-                        state=SwapRequest.State.REQUESTED,
+                        state=SwapRequest.States.REQUESTED,
                     )
                 ),
                 "done": len(
                     requests.filter(
                         swap_type=SwapRequest.Types.CANCELATION,
-                        state=SwapRequest.State.COMPLETED,
+                        state=SwapRequest.States.COMPLETED,
                     )
                 ),
                 "total": len(
                     requests.filter(
                         swap_type=SwapRequest.Types.CANCELATION,
-                        state=SwapRequest.State.REQUESTED,
+                        state=SwapRequest.States.REQUESTED,
                     )
                 ),
             },
@@ -199,7 +199,7 @@ class SwapCancel(EventViewMixin, OrderDetailMixin, TemplateView):
             SwapRequest,
             position__order=self.order,
             position__pk=self.kwargs["pk"],
-            state=SwapRequest.State.REQUESTED,
+            state=SwapRequest.States.REQUESTED,
         )
 
     def get_context_data(self, *args, **kwargs):
@@ -254,7 +254,7 @@ class SwapCreate(EventViewMixin, OrderDetailMixin, FormView):
     def form_valid(self, form):
         self.form = form
         instance = form.save()
-        if instance.state == SwapRequest.State.COMPLETED:
+        if instance.state == SwapRequest.States.COMPLETED:
             messages.success(
                 self.request, _("We received your request and matched you directly!")
             )

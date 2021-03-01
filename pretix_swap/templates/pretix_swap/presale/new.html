@@ -22,6 +22,9 @@
     </h2>
     <form method="post">{% csrf_token %}
     {% bootstrap_field form.position %}
+    {% for field in form.position_fields %}
+        {% bootstrap_field field %}
+    {% endfor %}
     {% bootstrap_field form.swap_type %}
     {% if form.swap_method %}
         {% bootstrap_field form.swap_method %}

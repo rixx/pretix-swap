@@ -70,6 +70,12 @@ class SwapRequest(models.Model):
     position = models.ForeignKey(
         "pretixbase.OrderPosition", related_name="swap_states", on_delete=models.CASCADE
     )
+    target_item = models.ForeignKey(
+        "pretixbase.Item",
+        related_name="+",
+        on_delete=models.CASCADE,
+        null=True,
+    )
     partner = models.ForeignKey(
         "pretixbase.OrderPosition",
         related_name="+",
