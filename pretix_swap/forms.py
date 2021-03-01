@@ -87,6 +87,7 @@ class SwapGroupForm(I18nModelForm):
         model = SwapGroup
         fields = (
             "name",
+            "swap_type",
             "left",
             "right",
         )

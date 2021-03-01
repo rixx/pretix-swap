@@ -10,6 +10,7 @@
         {% csrf_token %}
         {% bootstrap_form_errors form %}
         {% bootstrap_field form.name layout="control" %}
+        {% bootstrap_field form.swap_type layout="control" %}
         {% include "pretix_swap/fragment_swap_settings.html" %}
         <div class="form-group submit-group">
             <button type="submit" class="btn btn-primary btn-save">

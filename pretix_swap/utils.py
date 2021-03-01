@@ -7,7 +7,11 @@ def get_applicable_items(event):
 
 
 def get_swappable_items(item, groups=None):
-    groups = groups or item.event.swap_groups.all().prefetch_related("left", "right")
+    from .models import SwapGroup
+
+    groups = groups or item.event.swap_groups.filter(
+        swap_type=SwapGroup.Types.SWAP
+    ).prefetch_related("left", "right")
     result = set()
     for group in groups:
         if item in group.left.all():
@@ -23,9 +27,11 @@ def match_open_swap_requests(event):
     Attempts to find matches for all open requests. A bit stupid about
     it.
     """
-    from .models import SwapRequest
+    from .models import SwapGroup, SwapRequest
 
-    groups = event.swap_groups.all().prefetch_related("left", "right")
+    groups = event.swap_groups.filter(swap_type=SwapGroup.Types.SWAP).prefetch_related(
+        "left", "right"
+    )
     open_requests = (
         SwapRequest.objects.filter(
             position__order__event_id=event.pk,

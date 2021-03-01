@@ -9,6 +9,10 @@ from pretix.base.services.orders import OrderChangeManager
 
 
 class SwapGroup(models.Model):
+    class Types(models.TextChoices):
+        SWAP = "s"
+        CANCELATION = "c"
+
     event = models.ForeignKey(
         "pretixbase.Event", related_name="swap_groups", on_delete=models.CASCADE
     )
@@ -16,6 +20,7 @@ class SwapGroup(models.Model):
         max_length=255,
         verbose_name=_("Group name"),
     )
+    swap_type = models.CharField(max_length=1, choices=Types.choices)
 
     left = models.ManyToManyField(
         "pretixbase.Item", blank=True, related_name="+", verbose_name=_("Group A")
