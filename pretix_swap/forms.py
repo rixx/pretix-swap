@@ -1,12 +1,13 @@
 from django import forms
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
-from django_scopes.forms import SafeModelMultipleChoiceField
+from django_scopes.forms import SafeModelChoiceField, SafeModelMultipleChoiceField
 from i18nfield.forms import I18nModelForm
 from pretix.base.forms import SettingsForm
 from pretix.base.models import Item
 
-from .models import SwapGroup
+from .models import SwapGroup, SwapState
+from .utils import get_applicable_items
 
 
 class SwapSettingsForm(SettingsForm):
@@ -89,3 +90,88 @@ class SwapGroupForm(I18nModelForm):
             "left": SafeModelMultipleChoiceField,
             "right": SafeModelMultipleChoiceField,
         }
+
+
+class SwapRequestForm(forms.ModelForm):
+    def __init__(self, *args, order=None, swap_actions=None, **kwargs):
+        self.order = order
+        self.event = order.event
+        initial_position = kwargs.pop("position", None)
+        super().__init__(*args, **kwargs)
+        items = get_applicable_items(self.event)
+        positions = [
+            position.pk
+            for position in order.positions.all()
+            if position.item in items
+            and (
+                all(
+                    state.state == SwapState.SwapStates.COMPLETED
+                    for state in position.swap_states.all()
+                )
+            )
+        ]
+        self.fields["position"] = forms.ModelChoiceField(
+            self.order.positions.filter(pk__in=positions),
+            initial=initial_position,
+        )
+        self.action = None
+        if len(swap_actions) == 1:
+            self.swap_type = swap_actions[0]
+        else:  # We can both swap and cancel
+            self.fields["swap_type"] = forms.ChoiceField(
+                choices=[
+                    (SwapState.SwapTypes.SWAP, _("Request a swap")),
+                    (SwapState.SwapTypes.CANCELATION, _("Request to cancel")),
+                ],
+                label=_("Action"),
+            )
+        if (
+            SwapState.SwapTypes.SWAP in swap_actions
+            and self.event.settings.swap_orderpositions_specific
+        ):
+            self.fields["swap_code"] = forms.CharField(
+                required=False,
+                label=_("Swap code"),
+                help_text=_(
+                    "Do you already know who you want to swap with? Enter their swap code here!"
+                ),
+            )
+        if (
+            SwapState.SwapTypes.CANCELATION in swap_actions
+            and self.event.settings.cancel_orderpositions_specific
+        ):
+            self.fields["cancel_code"] = forms.CharField(
+                required=False,
+                label=_("Cancel code"),
+                help_text=_(
+                    "Do you already know who should take your place? Enter their waiting list code here!"
+                ),
+            )
+        if "cancel_code" not in self.fields and "swap_code" not in self.fields:
+            self.fields.pop("swap_method")
+
+    def clean_swap_code(self):
+        data = self.cleaned_data.get("swap_code")
+        if not data:
+            return data
+        if self.action and self.action != "swap":
+            return
+        if self.cleaned_data.get("action") != "swap":
+            return
+
+        partner = SwapState.objects.filter(
+            position__order__event=self.event,
+            swap_code=data,
+            state=SwapState.SwapStates.REQUESTED,
+        ).first()
+        if not partner:
+            raise ValidationError(_("Unknown swap code!"))
+        self.partner = partner
+        return data
+
+    class Meta:
+        model = SwapState
+        field_classes = {
+            "position": SafeModelChoiceField,
+        }
+        fields = ("swap_method",)

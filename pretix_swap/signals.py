@@ -40,6 +40,8 @@ def navbar_settings(sender, request, **kwargs):
 def notifications_order_info_top(sender, request, order, **kwargs):
     from .models import SwapState
 
+    if not order.status == "p":
+        return
     event = request.event
     notifications = []
 
@@ -55,7 +57,7 @@ def notifications_order_info_top(sender, request, order, **kwargs):
         from .utils import get_applicable_items
 
         items = get_applicable_items(event)
-        if any(pos.item in items for pos in order.all_positions.all()):
+        if any(pos.item in items for pos in order.positions.all()):
             if (
                 event.settings.swap_orderpositions
                 and event.settings.cancel_orderpositions
@@ -81,6 +83,9 @@ def notifications_order_info_top(sender, request, order, **kwargs):
 
 @receiver(order_info, dispatch_uid="swap_order_info")
 def order_info_bottom(sender, request, order, **kwargs):
+    if not order.status == "p":
+        return
+
     from .models import SwapState
     from .utils import get_applicable_items
 
@@ -110,7 +115,8 @@ def order_info_bottom(sender, request, order, **kwargs):
             event,
             "plugins:pretix_swap:swap.new",
             kwargs={"order": pos.order.code, "secret": pos.order.secret},
-        ),
+        )
+        + f"?position={pos.pk}",
         "view": lambda pos: eventreverse(
             event,
             "plugins:pretix_swap:swap.list",
@@ -123,7 +129,7 @@ def order_info_bottom(sender, request, order, **kwargs):
         ),
     }
     entries = []
-    for position in order.all_positions.all().prefetch_related("swap_states"):
+    for position in order.positions.all().prefetch_related("swap_states"):
         states = position.swap_states.all()
         if states:
             # TODO more than one state

@@ -1,4 +1,6 @@
+import string
 from django.db import models
+from django.utils.crypto import get_random_string
 from django.utils.translation import gettext_lazy as _
 from django_scopes import ScopedManager
 from i18nfield.fields import I18nCharField
@@ -34,15 +36,24 @@ class SwapGroup(models.Model):
     objects = ScopedManager(organizer="event__organizer")
 
 
+def generate_swap_code():
+    return get_random_string(
+        length=20, allowed_chars=string.ascii_lowercase + string.digits
+    )
+
+
 class SwapState(models.Model):
     class SwapStates(models.TextChoices):
-        SWAP_REQUESTED = "sr"
-        SWAP_SPECIFIC_REQUESTED = "ss"
-        SWAP_COMPLETED = "sc"
+        REQUESTED = "r"
+        COMPLETED = "c"
 
-        CANCELATION_REQUESTED = "cr"
-        CANCELATION_SPECIFIC_REQUESTED = "cs"
-        CANCELATION_COMPLETED = "cc"
+    class SwapTypes(models.TextChoices):
+        SWAP = "s"
+        CANCELATION = "c"
+
+    class SwapMethods(models.TextChoices):
+        FREE = "f", _("I know who to swap with.")
+        SPECIFIC = "s", _("Give my place to the next person in line.")
 
     position = models.ForeignKey(
         "pretixbase.OrderPosition", related_name="swap_states", on_delete=models.CASCADE
@@ -63,7 +74,12 @@ class SwapState(models.Model):
     requested = models.DateTimeField(auto_now_add=True)
     completed = models.DateTimeField(null=True)
 
-    state = models.CharField(max_length=2, choices=SwapStates.choices)
+    state = models.CharField(
+        max_length=1, choices=SwapStates.choices, default=SwapStates.REQUESTED
+    )
+    swap_type = models.CharField(max_length=1, choices=SwapTypes.choices)
+    swap_method = models.CharField(max_length=1, choices=SwapMethods.choices)
+    swap_code = models.CharField(max_length=40, default=generate_swap_code)
 
     objects = ScopedManager(organizer="position__order__event__organizer")
 

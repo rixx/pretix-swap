@@ -1,0 +1,29 @@
+{% extends "pretixpresale/event/base.html" %}
+{% load i18n %}
+{% load bootstrap3 %}
+{% load eventurl %}
+{% load money %}
+
+{% block title %}{% trans "New swap request" %}{% endblock %}
+{% block content %}
+    <h2>
+        {% blocktrans trimmed with code=order.code %}
+            New swap request for your order: {{ code }}
+        {% endblocktrans %}
+        {% if order.testmode %}
+            <span class="label label-warning">{% trans "TEST MODE" %}</span>
+        {% endif %}
+        <a href="{% eventurl event "presale:event.order" secret=order.secret order=order.code %}"
+                class="btn btn-default">
+            {% trans "Back to order" %}
+        </a>
+        {% include "pretixpresale/event/fragment_order_status.html" with order=order event=request.event class="pull-right flip" %}
+        <div class="clearfix"></div>
+    </h2>
+    <form method="post">{% csrf_token %}
+    {% bootstrap_form form %}
+    {# TODO: make prettier, add js for hiding/showing fields #}
+    <button type="submit" class="btn btn-primary btn-block">{% trans "Send request" %}</button>
+    </form>
+{% endblock %}
+
