@@ -150,13 +150,33 @@ class SwapRequestForm(forms.ModelForm):
         if "cancel_code" not in self.fields and "swap_code" not in self.fields:
             self.fields.pop("swap_method")
 
+    def save(self):
+        data = self.cleaned_data
+        instance = SwapState.objects.create(
+            position=data["position"],
+            state=SwapState.SwapStates.REQUESTED,
+            swap_type=data.get("swap_type") or self.swap_type,
+            swap_method=data.get("swap_method") or SwapState.SwapMethods.FREE,
+        )
+        if instance.swap_type == SwapState.SwapTypes.SWAP:
+            if data.get("swap_code"):
+                instance.swap_with(data.get("swap_code"))
+            elif instance.swap_method == SwapState.SwapMethods.FREE:
+                instance.attempt_swap()
+        elif instance.swap_type == SwapState.SwapTypes.CANCELATION:
+            if data.get("cancel_code"):
+                instance.cancel_for(data.get("swap_code"))
+            elif instance.swap_method == SwapState.SwapMethods.FREE:
+                instance.attempt_swap()
+        return instance
+
     def clean_swap_code(self):
         data = self.cleaned_data.get("swap_code")
         if not data:
             return data
-        if self.action and self.action != "swap":
+        if self.action and self.action != SwapState.SwapTypes.SWAP:
             return
-        if self.cleaned_data.get("action") != "swap":
+        if self.cleaned_data.get("action") != SwapState.SwapTypes.SWAP:
             return
 
         partner = SwapState.objects.filter(
@@ -166,7 +186,20 @@ class SwapRequestForm(forms.ModelForm):
         ).first()
         if not partner:
             raise ValidationError(_("Unknown swap code!"))
+        # TODO validate that the items are actually compatible!
         self.partner = partner
+        return partner
+
+    def clean_cancel_code(self):
+        data = self.cleaned_data.get("cancel_code")
+        if not data:
+            return data
+        if self.action and self.action != SwapState.SwapTypes.CANCELATION:
+            return
+        if self.cleaned_data.get("action") != SwapState.SwapTypes.CANCELATION:
+            return
+
+        # TODO find cart or … something? help?
         return data
 
     class Meta:

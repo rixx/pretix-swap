@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.db import transaction
 from django.http import Http404
 from django.shortcuts import redirect
 from django.urls import reverse
@@ -14,6 +15,7 @@ from django.views.generic import (
 from pretix.base.models.event import Event
 from pretix.control.permissions import EventPermissionRequiredMixin
 from pretix.control.views.event import EventSettingsFormView, EventSettingsViewMixin
+from pretix.multidomain.urlreverse import eventreverse
 from pretix.presale.views import EventViewMixin
 from pretix.presale.views.order import OrderDetailMixin
 
@@ -159,3 +161,34 @@ class SwapCreate(EventViewMixin, OrderDetailMixin, FormView):
         if not self.swap_actions or not self.order.status == "p":
             raise Http404()
         return super().dispatch(request, *args, **kwargs)
+
+    @transaction.atomic
+    def form_valid(self, form):
+        self.form = form
+        instance = form.save()
+        if instance.state == SwapState.SwapStates.COMPLETED:
+            messages.success(
+                self.request, _("We received your request and matched you directly!")
+            )
+        elif instance.swap_method == SwapState.SwapMethods.FREE:
+            messages.success(
+                self.request,
+                _(
+                    "We received your request – please wait while we try to find a match for you."
+                ),
+            )
+        else:
+            messages.success(
+                self.request,
+                _(
+                    "We received your request. Once you enter a swapping code or give your code to somebody else, this process can continue."
+                ),
+            )  # TODO wording
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        return eventreverse(
+            self.request.event,
+            "presale:event.order",
+            kwargs={"order": self.order.code, "secret": self.order.secret},
+        )

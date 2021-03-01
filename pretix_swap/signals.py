@@ -124,7 +124,7 @@ def order_info_bottom(sender, request, order, **kwargs):
         ),
         "abort": lambda pos: eventreverse(
             event,
-            "plugins:pretix_swap:swap.list",
+            "plugins:pretix_swap:swap.cancel",
             kwargs={"order": pos.order.code, "secret": pos.order.secret, "pk": pos.pk},
         ),
     }
