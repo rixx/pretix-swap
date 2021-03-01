@@ -37,9 +37,6 @@
     {% if form.swap_type %}
         {% bootstrap_field form.swap_type %}
     {% endif %}
-    {% for field in form.position_fields %}
-        {% bootstrap_field field %}
-    {% endfor %}
     {% if form.swap_method %}
         {% bootstrap_field form.swap_method %}
     {% endif %}
@@ -52,6 +49,9 @@
     {% if form.cancel_code %}
         {% bootstrap_field form.cancel_code %}
     {% endif %}
+    {% for field in form.position_fields %}
+        {% bootstrap_field field %}
+    {% endfor %}
     <button type="submit" class="btn btn-primary btn-block">{% trans "Send request" %}</button>
     </form>
     <script src="{% static "pretix_swap/swap.js" %}"></script>
