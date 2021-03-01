@@ -14,8 +14,9 @@
             <thead>
             <tr>
                 <th></th>
-                <th>{% trans "Swaps" %}</th>
-                <th>{% trans "Cancelations" %}</th>
+                <th class="text-right">{% trans "Swap requests" %}</th>
+                <th class="text-right">{% trans "Cancelation requests" %}</th>
+                <th class="text-right">{% trans "Pending orders" %}</th>
                 <th></th>
             </tr>
             </thead>
@@ -27,9 +28,10 @@
                         {{ product.item }}
                         </a>
                     </th>
-                    <td>{{ product.open_swap_requests }}</td>
-                    <td>{{ product.open_cancelation_requests }}</td>
-                    <td></td>
+                    <td class="text-right">{{ product.open_swap_requests }}</td>
+                    <td class="text-right">{{ product.open_cancelation_requests }}</td>
+                    <td class="text-right">{{ product.pending_orders }}</td>
+                    <td class="text-right"></td>
                 </tr>
                 {% empty %}
                 <tr><td>{% trans "There are currently no open requests." %}</td></tr>
@@ -43,25 +45,25 @@
             <thead>
             <tr>
                 <th></th>
-                <th>{% trans "Swaps" %}</th>
-                <th>{% trans "Cancelations" %}</th>
+                <th class="text-right">{% trans "Swaps" %}</th>
+                <th class="text-right">{% trans "Cancelations" %}</th>
             </tr>
             </thead>
             <tbody>
                 <tr>
                     <th>{% trans "Requested" %}</th>
-                    <td>{{ by_state.swap.open }}</td>
-                    <td>{{ by_state.cancel.open }}</td>
+                    <td class="text-right">{{ by_state.swap.open }}</td>
+                    <td class="text-right">{{ by_state.cancel.open }}</td>
                 </tr>
                 <tr>
                     <th>{% trans "Completed" %}</th>
-                    <td>{{ by_state.swap.done }}</td>
-                    <td>{{ by_state.cancel.done }}</td>
+                    <td class="text-right">{{ by_state.swap.done }}</td>
+                    <td class="text-right">{{ by_state.cancel.done }}</td>
                 </tr>
                 <tr>
                     <th>{% trans "Total" %}</th>
-                    <th>{{ by_state.swap.total }}</th>
-                    <th>{{ by_state.cancel.total }}</th>
+                    <th class="text-right">{{ by_state.swap.total }}</th>
+                    <th class="text-right">{{ by_state.cancel.total }}</th>
                 </tr>
             </tbody>
         </table>

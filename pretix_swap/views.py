@@ -13,6 +13,7 @@ from django.views.generic import (
     UpdateView,
 )
 from pretix.base.models.event import Event
+from pretix.base.models.orders import OrderPosition
 from pretix.control.permissions import EventPermissionRequiredMixin
 from pretix.control.views.event import EventSettingsFormView, EventSettingsViewMixin
 from pretix.multidomain.urlreverse import eventreverse
@@ -40,6 +41,9 @@ class SwapStats(EventPermissionRequiredMixin, TemplateView):
             partner__isnull=True,
         ).select_related("position", "position__item")
         items = list(set(requests.values_list("position__item", flat=True)))
+        positions = OrderPosition.objects.filter(
+            order__event=self.request.event, order__require_approval=True
+        )
         return [
             {
                 "item": self.request.event.items.get(pk=item),
@@ -49,6 +53,7 @@ class SwapStats(EventPermissionRequiredMixin, TemplateView):
                 "open_cancelation_requests": requests.filter(
                     swap_type=SwapRequest.Types.CANCELATION
                 ).count(),
+                "pending_orders": positions.filter(item=item).count(),
             }
             for item in items
         ]
@@ -69,12 +74,7 @@ class SwapStats(EventPermissionRequiredMixin, TemplateView):
                         state=SwapRequest.States.COMPLETED,
                     )
                 ),
-                "total": len(
-                    requests.filter(
-                        swap_type=SwapRequest.Types.SWAP,
-                        state=SwapRequest.States.REQUESTED,
-                    )
-                ),
+                "total": len(requests.filter(swap_type=SwapRequest.Types.SWAP)),
             },
             "cancel": {
                 "open": len(
@@ -89,12 +89,7 @@ class SwapStats(EventPermissionRequiredMixin, TemplateView):
                         state=SwapRequest.States.COMPLETED,
                     )
                 ),
-                "total": len(
-                    requests.filter(
-                        swap_type=SwapRequest.Types.CANCELATION,
-                        state=SwapRequest.States.REQUESTED,
-                    )
-                ),
+                "total": len(requests.filter(swap_type=SwapRequest.Types.CANCELATION)),
             },
         }
 
