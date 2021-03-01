@@ -130,12 +130,7 @@ class SwapRequestForm(forms.ModelForm):
         for position in relevant_positions:
             field = forms.ModelChoiceField(
                 Item.objects.filter(
-                    pk__in=[
-                        item.pk
-                        for item in get_swappable_items(
-                            position.item, position.order.event
-                        )
-                    ]
+                    pk__in=[item.pk for item in get_swappable_items(position.item)]
                 ),
                 label=_("Which product do you want instead?"),
                 required=False,

@@ -6,8 +6,8 @@ def get_applicable_items(event):
     return result
 
 
-def get_swappable_items(item, event, groups=None):
-    groups = groups or event.swap_groups.all().prefetch_related("left", "right")
+def get_swappable_items(item, groups=None):
+    groups = groups or item.event.swap_groups.all().prefetch_related("left", "right")
     result = set()
     for group in groups:
         if item in group.left.all():
@@ -19,7 +19,10 @@ def get_swappable_items(item, event, groups=None):
 
 def match_open_swap_requests(event):
     """Can be used in admin actions and runperiodic.
-    Attempts to find matches for all open requests. A bit stupid about it."""
+
+    Attempts to find matches for all open requests. A bit stupid about
+    it.
+    """
     from .models import SwapRequest
 
     groups = event.swap_groups.all().prefetch_related("left", "right")
@@ -36,7 +39,7 @@ def match_open_swap_requests(event):
     requested_items = set(open_requests.values_list("position__item", flat=True))
 
     for item in requested_items:
-        swappables = get_swappable_items(item, event, groups=groups)
+        swappables = get_swappable_items(item, groups=groups)
         if not swappables:
             # TODO warn or yell or … do something. These are orphaned requests!
             continue
