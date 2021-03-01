@@ -4,7 +4,7 @@ if (typeSelect) {
     const updateVisibility = () => {
         const mode = document.querySelector("#id_swap_method").value
         if (typeSelect.value === "s") {
-            if (mode === "f") {
+            if (mode === "s") {
                 $("#id_cancel_code").parent().hide()
                 $("#id_swap_code").parent().show()
             } else {
@@ -12,7 +12,7 @@ if (typeSelect) {
                 $("#id_swap_code").parent().hide()
             }
         } else {
-            if (mode === "f") {
+            if (mode === "s") {
                 $("#id_cancel_code").parent().show()
                 $("#id_swap_code").parent().hide()
             } else {

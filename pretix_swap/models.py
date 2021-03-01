@@ -43,8 +43,8 @@ class SwapRequest(models.Model):
         CANCELATION = "c"
 
     class Methods(models.TextChoices):
-        FREE = "f", _("I know who to swap with.")
-        SPECIFIC = "s", _("Give my place to the next person in line.")
+        FREE = "f", _("Give my place to the next person in line.")
+        SPECIFIC = "s", _("I know who to swap with.")
 
     state = models.CharField(
         max_length=1, choices=States.choices, default=States.REQUESTED
