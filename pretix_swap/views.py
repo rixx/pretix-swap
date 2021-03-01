@@ -1,7 +1,7 @@
 from django.contrib import messages
 from django.db import transaction
 from django.http import Http404
-from django.shortcuts import redirect
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
@@ -127,14 +127,55 @@ class SwapGroupDelete(EventPermissionRequiredMixin, DeleteView):
 class SwapOverview(EventViewMixin, OrderDetailMixin, TemplateView):
     template_name = "pretix_swap/presale/swap.html"
 
+    def dispatch(self, request, *args, **kwargs):
+        if not self.order.status == "p":
+            raise Http404()
+        return super().dispatch(request, *args, **kwargs)
+
 
 class SwapCancel(EventViewMixin, OrderDetailMixin, TemplateView):
     template_name = "pretix_swap/presale/cancel.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        if not self.order.status == "p":
+            raise Http404()
+        self.object = self.get_object()
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_object(self):
+        return get_object_or_404(
+            SwapState,
+            position__order=self.order,
+            position__pk=self.kwargs["pk"],
+            state=SwapState.SwapStates.REQUESTED,
+        )
+
+    def get_context_data(self, *args, **kwargs):
+        ctx = super().get_context_data(*args, **kwargs)
+        ctx["obj"] = self.object
+        ctx["order"] = self.order
+        return ctx
+
+    def post(self, request, *args, **kwargs):
+        self.object.delete()
+        messages.success(request, _("We have canceled your request."))
+        return redirect(
+            eventreverse(
+                self.request.event,
+                "presale:event.order",
+                kwargs={"order": self.order.code, "secret": self.order.secret},
+            )
+        )
 
 
 class SwapCreate(EventViewMixin, OrderDetailMixin, FormView):
     template_name = "pretix_swap/presale/new.html"
     form_class = SwapRequestForm
+
+    def dispatch(self, request, *args, **kwargs):
+        if not self.swap_actions or not self.order.status == "p":
+            raise Http404()
+        return super().dispatch(request, *args, **kwargs)
 
     @cached_property
     def swap_actions(self):
@@ -156,11 +197,6 @@ class SwapCreate(EventViewMixin, OrderDetailMixin, FormView):
         ctx = super().get_context_data(*args, **kwargs)
         ctx["order"] = self.order
         return ctx
-
-    def dispatch(self, request, *args, **kwargs):
-        if not self.swap_actions or not self.order.status == "p":
-            raise Http404()
-        return super().dispatch(request, *args, **kwargs)
 
     @transaction.atomic
     def form_valid(self, form):

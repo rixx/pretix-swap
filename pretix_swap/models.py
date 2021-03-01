@@ -55,6 +55,14 @@ class SwapState(models.Model):
         FREE = "f", _("I know who to swap with.")
         SPECIFIC = "s", _("Give my place to the next person in line.")
 
+    state = models.CharField(
+        max_length=1, choices=SwapStates.choices, default=SwapStates.REQUESTED
+    )
+    swap_type = models.CharField(max_length=1, choices=SwapTypes.choices)
+    swap_method = models.CharField(
+        max_length=1, choices=SwapMethods.choices, default=SwapMethods.FREE
+    )
+
     position = models.ForeignKey(
         "pretixbase.OrderPosition", related_name="swap_states", on_delete=models.CASCADE
     )
@@ -74,13 +82,6 @@ class SwapState(models.Model):
     requested = models.DateTimeField(auto_now_add=True)
     completed = models.DateTimeField(null=True)
 
-    state = models.CharField(
-        max_length=1, choices=SwapStates.choices, default=SwapStates.REQUESTED
-    )
-    swap_type = models.CharField(max_length=1, choices=SwapTypes.choices)
-    swap_method = models.CharField(
-        max_length=1, choices=SwapMethods.choices, default=SwapMethods.FREE
-    )
     swap_code = models.CharField(max_length=40, default=generate_swap_code)
 
     objects = ScopedManager(organizer="position__order__event__organizer")
