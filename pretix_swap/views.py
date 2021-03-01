@@ -212,7 +212,7 @@ class SwapCancel(EventViewMixin, OrderDetailMixin, TemplateView):
         return get_object_or_404(
             SwapRequest,
             position__order=self.order,
-            position__pk=self.kwargs["pk"],
+            pk=self.kwargs["pk"],
             state=SwapRequest.States.REQUESTED,
         )
 

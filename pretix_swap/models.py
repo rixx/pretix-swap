@@ -122,13 +122,6 @@ class SwapRequest(models.Model):
         }
         return texts[(self.swap_type, self.state, self.swap_method)]
 
-    def get_notification_actions(self):
-        if self.state == self.States.COMPLETED:
-            return []
-        if self.partner:
-            return []  # ["view"]
-        return ["abort"]  # ["view", "abort"]
-
     def swap_with(self, other):
         self.refresh_from_db()
         other.refresh_from_db()

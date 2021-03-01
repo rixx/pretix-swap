@@ -1,4 +1,5 @@
 from django.dispatch import receiver
+from django.template.loader import get_template
 from django.urls import resolve, reverse
 from django.utils.translation import gettext_lazy as _
 from pretix.base.settings import settings_hierarkey
@@ -127,87 +128,15 @@ def order_info_bottom(sender, request, order, **kwargs):
     if not states and not can_swap:
         return
 
-    icon_map = {"create": "plus", "view": "eye", "abort": "trash-o"}
-    text_map = {
-        "create": _("New request"),
-        "view": _("View request"),
-        "abort": _("Cancel request"),
+    template = get_template("pretix_swap/presale/order_box.html")
+    ctx = {
+        "request": request,
+        "positions": order.positions.all().prefetch_related("swap_states"),
+        "items": items,
+        "specific_swap_allowed": event.settings.swap_orderpositions
+        and event.settings.swap_orderpositions_specific,
     }
-    from pretix.multidomain.urlreverse import eventreverse
-
-    link_map = {
-        "create": lambda pos: eventreverse(
-            event,
-            "plugins:pretix_swap:swap.new",
-            kwargs={"order": pos.order.code, "secret": pos.order.secret},
-        )
-        + f"?position={pos.pk}",
-        "view": lambda pos: eventreverse(
-            event,
-            "plugins:pretix_swap:swap.list",
-            kwargs={"order": pos.order.code, "secret": pos.order.secret},
-        ),
-        "abort": lambda pos: eventreverse(
-            event,
-            "plugins:pretix_swap:swap.cancel",
-            kwargs={"order": pos.order.code, "secret": pos.order.secret, "pk": pos.pk},
-        ),
-    }
-    entries = []
-    for position in order.positions.all().prefetch_related("swap_states"):
-        states = position.swap_states.all()
-        if states:
-            # TODO more than one state
-            state = states[0]
-            entry = {
-                "position": position,
-                "text": state.get_notification(),
-                "actions": state.get_notification_actions(),
-            }
-            if not entry["actions"] and position.item in items:
-                entry["actions"].append("create")
-        elif position.item in items:
-            entry = {
-                "position": position,
-                "text": _("You can request to swap or cancel this product."),
-                "actions": ["create"],
-            }
-        else:
-            entry = {
-                "position": position,
-                "text": _("This product cannot be changed at the moment."),
-                "actions": [],
-            }
-
-        entry["action_text"] = " ".join(
-            f'<a href="{link_map[action](position)}" class="btn btn-default"><i class="fa fa-{icon_map[action]}"></i> {text_map[action]}</a>'
-            for action in entry["actions"]
-        )
-        entry["attendee_name"] = (
-            f" ({position.attendee_name})" if position.attendee_name else ""
-        )
-        entries.append(entry)
-
-    entries_text = "".join(
-        f"<li><b>{entry['position'].item.name}{entry['attendee_name']}:</b> {entry['text']}<br>{entry['action_text']}</li>"
-        for entry in entries
-    )
-
-    heading = _("Swap items")
-    result = f"""
-    <div class="panel panel-primary">
-        <div class="panel-heading">
-            <h3 class="panel-title"> {heading} </h3>
-        </div>
-        <div class="panel-body">
-            <ol>
-                {entries_text}
-            </ol>
-        </div>
-    </div>
-    """
-
-    return result
+    return template.render(ctx)
 
 
 @receiver(logentry_display, dispatch_uid="swap_logentries")

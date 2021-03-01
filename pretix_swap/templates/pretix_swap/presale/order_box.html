@@ -1,0 +1,44 @@
+{% load eventurl %}
+{% load i18n %}
+{% load static %}
+
+<div class="panel panel-primary">
+    <div class="panel-heading">
+        <h3 class="panel-title">{% trans "Swap items" %}</h3>
+    </div>
+    <div class="panel-body">
+        <ol>
+            {% for position in positions %}
+                <li>
+                    <b>{{ position.item.name }}{% if position.attendee_name %} ({{ position.attendee_name }}){% endif %}:</b>
+                    {% if position.swap_states.all %}
+                        {% for state in position.swap_states.all %}
+                            {{ state.get_notification }}
+                            {% if state.swap_type == state.Types.SWAP and state.state == state.States.REQUESTED and specific_swap_allowed %}
+                                {% trans "If you want to swap with somebody specific, give them this swap token: " %}
+                                <span data-toggle="tooltip" data-placement="bottom" title="{% trans "Click to copy" %}" class="secret copyable" data-destination="{{ state.swap_code }}">
+                                    {{ state.swap_code }}
+                                </span>
+                            {% endif %}
+                            {% if state.state != state.States.COMPLETED and not state.partner %}
+                                <a href="{% eventurl request.event "plugins:pretix_swap:swap.cancel" order=position.order.code secret=position.order.secret pk=state.pk %}" class="btn btn-danger">
+                                    <i class="fa fa-trash-o"></i> {% trans "Cancel request" %}
+                                </a>
+                            {% endif %}
+                            {# TODO allow creation if all others are completed #}
+                        {% endfor %}
+                    {% elif position.item in items %}
+                        {% trans "You can request to swap or cancel this product." %}
+                        <a href="{% eventurl request.event "plugins:pretix_swap:swap.new" order=position.order.code secret=position.order.secret %}?position={{ position.pk }}" class="btn btn-default">
+                            <i class="fa fa-plus"></i> {% trans "New request" %}
+                        </a>
+                    {% else %}
+                        {% trans "This product cannot be changed at the moment." %}
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ol>
+    </div>
+</div>
+
+<script src="{% static "pretix_swap/order.js" %}"></script>
