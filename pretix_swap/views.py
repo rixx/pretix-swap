@@ -107,6 +107,7 @@ class SwapGroupCreate(EventPermissionRequiredMixin, CreateView):
     def get_form_kwargs(self):
         result = super().get_form_kwargs()
         result["event"] = self.request.event
+        result["request"] = self.request  # Only used for warnings
         return result
 
     def form_valid(self, form):
@@ -143,6 +144,7 @@ class SwapGroupEdit(EventPermissionRequiredMixin, UpdateView):
     def get_form_kwargs(self, **kwargs):
         result = super().get_form_kwargs(**kwargs)
         result["event"] = self.request.event
+        result["request"] = self.request  # Only used for warnings
         result["locales"] = self.request.event.settings.locales
         return result
 

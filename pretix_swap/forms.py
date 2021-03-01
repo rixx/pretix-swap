@@ -1,4 +1,5 @@
 from django import forms
+from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django_scopes.forms import SafeModelChoiceField, SafeModelMultipleChoiceField
@@ -49,8 +50,9 @@ class ItemModelMultipleChoiceField(SafeModelMultipleChoiceField):
 
 
 class SwapGroupForm(I18nModelForm):
-    def __init__(self, *args, event=None, **kwargs):
+    def __init__(self, *args, event=None, request=None, **kwargs):
         self.event = event
+        self.request = request
         kwargs["locales"] = self.event.settings.locales if self.event else ["en"]
         super().__init__(*args, **kwargs)
         self.fields["left"].queryset = Item.objects.filter(event=event)
@@ -80,20 +82,35 @@ class SwapGroupForm(I18nModelForm):
         cleaned_data = super().clean()
         left = set(cleaned_data.get("left") or [])
         right = set(cleaned_data.get("right") or [])
-        if left & right:
-            items = ", ".join(str(item.name) for item in (left & right))
-            raise ValidationError(
-                str(
-                    _(
-                        "Please include every item only on one side! Incorrect item(s): {items}"
-                    )
-                ).format(items=items)
-            )
+
+        is_swap = cleaned_data.get("swap_type") == SwapGroup.Types.SWAP
+        if is_swap:
+            if left & right:
+                items = ", ".join(str(item.name) for item in (left & right))
+                raise ValidationError(
+                    str(
+                        _(
+                            "Please include every item only on one side! Incorrect item(s): {items}"
+                        )
+                    ).format(items=items)
+                )
         prices = set()
         for item in left | right:
             prices.add(item.default_price)
         if len(prices) > 1:
-            raise ValidationError(_("You can only swap elements with the same price!"))
+            if is_swap:
+                raise ValidationError(
+                    _("You can only swap elements with the same price!")
+                )
+            elif self.request:
+                messages.warning(
+                    self.request,
+                    _(
+                        "Your products include elements with different prices. "
+                        "Please note that cancelations will only be allowed when the new product "
+                        "has at least the same price as the canceled one, so that you will not lose money."
+                    ),
+                )
         return cleaned_data
 
     class Meta:
