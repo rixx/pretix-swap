@@ -141,8 +141,8 @@ class SwapState(models.Model):
         if self.state == self.SwapStates.COMPLETED:
             return []
         if self.partner or self.partner_cart:
-            return ["view"]
-        return ["view", "abort"]
+            return []  # ["view"]
+        return ["abort"]  # ["view", "abort"]
 
     def swap_with(self, other):
         # TODO the actual swap method

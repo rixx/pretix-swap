@@ -158,10 +158,11 @@ def order_info_bottom(sender, request, order, **kwargs):
             f'<a href="{link_map[action](position)}" class="btn btn-default"><i class="fa fa-{icon_map[action]}"></i> {text_map[action]}</a>'
             for action in entry["actions"]
         )
+        entry["attendee_name"] = f" ({position.attendee_name})" if position.attendee_name else ""
         entries.append(entry)
 
     entries_text = "".join(
-        f"<li><b>{entry['position'].item.name}:</b> {entry['text']}<br>{entry['action_text']}</li>"
+        f"<li><b>{entry['position'].item.name}{entry['attendee_name']}:</b> {entry['text']}<br>{entry['action_text']}</li>"
         for entry in entries
     )
 
