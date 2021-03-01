@@ -60,7 +60,10 @@ class SwapState(models.Model):
     )
     swap_type = models.CharField(max_length=1, choices=SwapTypes.choices)
     swap_method = models.CharField(
-        max_length=1, choices=SwapMethods.choices, default=SwapMethods.FREE
+        max_length=1,
+        choices=SwapMethods.choices,
+        default=SwapMethods.FREE,
+        verbose_name=_("How do you want to handle the ticket?"),
     )
 
     position = models.ForeignKey(

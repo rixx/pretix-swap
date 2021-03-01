@@ -2,7 +2,7 @@
 {% load i18n %}
 {% load bootstrap3 %}
 {% load eventurl %}
-{% load money %}
+{% load static %}
 
 {% block title %}{% trans "New swap request" %}{% endblock %}
 {% block content %}
@@ -21,9 +21,20 @@
         <div class="clearfix"></div>
     </h2>
     <form method="post">{% csrf_token %}
-    {% bootstrap_form form %}
+    {% bootstrap_field form.position %}
+    {% bootstrap_field form.swap_type %}
+    {% if form.swap_method %}
+        {% bootstrap_field form.swap_method %}
+    {% endif %}
+    {% if form.swap_code %}
+        {% bootstrap_field form.swap_code %}
+    {% endif %}
+    {% if form.cancel_code %}
+        {% bootstrap_field form.cancel_code %}
+    {% endif %}
     {# TODO: make prettier, add js for hiding/showing fields #}
     <button type="submit" class="btn btn-primary btn-block">{% trans "Send request" %}</button>
     </form>
+    <script src="{% static "pretix_swap/swap.js" %}"></script>
 {% endblock %}
 

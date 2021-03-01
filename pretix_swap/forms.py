@@ -92,6 +92,14 @@ class SwapGroupForm(I18nModelForm):
         }
 
 
+class PositionModelChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, instance):
+        label = str(instance)
+        if instance.attendee_name:
+            return f"{label} ({instance.attendee_name})"
+        return label
+
+
 class SwapRequestForm(forms.ModelForm):
     def __init__(self, *args, order=None, swap_actions=None, **kwargs):
         self.order = order
@@ -110,9 +118,10 @@ class SwapRequestForm(forms.ModelForm):
                 )
             )
         ]
-        self.fields["position"] = forms.ModelChoiceField(
+        self.fields["position"] = PositionModelChoiceField(
             self.order.positions.filter(pk__in=positions),
             initial=initial_position,
+            label=_("Which item do you want to change?"),
         )
         self.action = None
         if len(swap_actions) == 1:
@@ -121,9 +130,9 @@ class SwapRequestForm(forms.ModelForm):
             self.fields["swap_type"] = forms.ChoiceField(
                 choices=[
                     (SwapState.SwapTypes.SWAP, _("Request a swap")),
-                    (SwapState.SwapTypes.CANCELATION, _("Request to cancel")),
+                    (SwapState.SwapTypes.CANCELATION, _("Request cancelation")),
                 ],
-                label=_("Action"),
+                label=_("What do you want to do?"),
             )
         if (
             SwapState.SwapTypes.SWAP in swap_actions
