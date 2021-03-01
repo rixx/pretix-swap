@@ -27,7 +27,6 @@
         {% trans "You requested to cancel this order item and give your place to somebody else." %}
         {% endif %}
         {% blocktrans trimmed %}Do you really want to cancel this request?{% endblocktrans %}
-    {# TODO: make prettier, add js for hiding/showing fields #}
     <div class="col-md-12">
     <a href="{% eventurl event "presale:event.order" secret=order.secret order=order.code %}"
             class="btn btn-default col-md-4">

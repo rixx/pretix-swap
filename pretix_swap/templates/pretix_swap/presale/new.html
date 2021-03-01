@@ -35,7 +35,6 @@
     {% if form.cancel_code %}
         {% bootstrap_field form.cancel_code %}
     {% endif %}
-    {# TODO: make prettier, add js for hiding/showing fields #}
     <button type="submit" class="btn btn-primary btn-block">{% trans "Send request" %}</button>
     </form>
     <script src="{% static "pretix_swap/swap.js" %}"></script>

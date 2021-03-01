@@ -138,6 +138,10 @@ class SwapRequest(models.Model):
     def swap_with(self, other):
         self.refresh_from_db()
         other.refresh_from_db()
+
+        if not self.event.settings.swap_orderpositions:
+            raise Exception("Order position swapping is currently not allowed")
+
         my_item = self.position.item
         my_variation = self.position.variation
         other_item = other.position.item
@@ -202,6 +206,7 @@ class SwapRequest(models.Model):
 
         from .utils import get_swappable_items
 
+        # TODO validate that the items are compatible with target_item
         items = get_swappable_items(self.position.item)
         other = SwapRequest.objects.filter(
             state=SwapRequest.States.REQUESTED,

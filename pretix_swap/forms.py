@@ -272,7 +272,6 @@ class SwapRequestForm(forms.ModelForm):
                     )
                 ).format(other_item=partner.position.item, your_item=position.item)
             )
-        # TODO validate that the items are actually compatible!
         self.partner = partner
         return partner
 
