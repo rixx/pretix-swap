@@ -5,6 +5,7 @@ from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 from django_scopes import ScopedManager
 from i18nfield.fields import I18nCharField
+from pretix.base.services.orders import OrderChangeManager
 
 
 class SwapGroup(models.Model):
@@ -128,17 +129,43 @@ class SwapRequest(models.Model):
         return ["abort"]  # ["view", "abort"]
 
     def swap_with(self, other):
-        # TODO the actual swap method
+        self.refresh_from_db()
+        other.refresh_from_db()
+        my_item = self.position.item
+        my_variation = self.position.variation
+        other_item = other.position.item
+        other_variation = other.position.variation
+        # TODO maybe notify=False, our own notification
+        my_change_manager = OrderChangeManager(order=self.position.order)
+        other_change_manager = OrderChangeManager(order=other.position.order)
+
         # Make sure AGAIN that the state is alright, because timings
-        # Make the swap
-        # Send notification
-        # Set state to complete
-        # Log what is happening
-        pass
+        if (
+            not self.state == self.States.REQUESTED
+            and other.state == self.States.REQUESTED
+        ):
+            raise Exception("Both requests have to be in the 'requesting' state.")
+        if not self.position.price == other.position.price:
+            raise Exception("Both requests have to have the same price.")
+        my_change_manager.change_item(
+            position=self.position, item=other_item, variation=other_variation
+        )
+        my_change_manager.commit()
+        other_change_manager.change_item(
+            position=other.position, item=my_item, variation=my_variation
+        )
+        other_change_manager.commit()
+        self.state = self.States.COMPLETED
+        self.save()
+        other.state = self.States.COMPLETED
+        other.save()
 
     def attempt_swap(self):
         """Find a swap partner.
-        Do not use for bulk action – use utils.match_open_swap_requests instead!"""
+
+        Do not use for bulk action – use utils.match_open_swap_requests
+        instead!
+        """
         if self.swap_method != self.Methods.FREE:
             return
 
