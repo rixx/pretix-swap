@@ -1,6 +1,7 @@
 import string
 from django.db import models
 from django.utils.crypto import get_random_string
+from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 from django_scopes import ScopedManager
 from i18nfield.fields import I18nCharField
@@ -89,6 +90,10 @@ class SwapRequest(models.Model):
 
     objects = ScopedManager(organizer="position__order__event__organizer")
 
+    @cached_property
+    def event(self):
+        return self.position.order.event
+
     def get_notification(self):
         texts = {
             (self.Types.SWAP, self.States.REQUESTED, self.Methods.FREE): _(
@@ -129,19 +134,32 @@ class SwapRequest(models.Model):
 
     def swap_with(self, other):
         # TODO the actual swap method
-        # Log what is happening
+        # Make sure AGAIN that the state is alright, because timings
         # Make the swap
         # Send notification
         # Set state to complete
+        # Log what is happening
         pass
 
     def attempt_swap(self):
-        # TODO attempt to find a swap partner
-        # Must not be in specific mode
+        """Find a swap partner.
+        Do not use for bulk action – use utils.match_open_swap_requests instead!"""
         if self.swap_method != self.Methods.FREE:
             return
-        # select items that would fit
-        # and note the price matching setting
+
+        from .utils import get_swappable_items
+
+        items = get_swappable_items(self.position.item)
+        other = SwapRequest.objects.filter(
+            state=SwapRequest.States.REQUESTED,
+            swap_method=SwapRequest.Methods.FREE,
+            swap_type=SwapRequest.Types.SWAP,
+            position__order__event_id=self.event.pk,
+            position__item__in=items,
+        ).first()
+        # TODO note the price matching setting
+        if other:
+            self.swap_with(other)
 
     def cancel_for(self, other):
         # TODO the actual cancel method
@@ -149,6 +167,7 @@ class SwapRequest(models.Model):
         # Do the thing
         # Send notification
         # Set state to complete
+        # Make sure AGAIN that the state is alright, because timings
         pass
 
     def attempt_cancelation(self):
