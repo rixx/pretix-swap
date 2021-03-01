@@ -1,5 +1,5 @@
 Swap tickets with other attendees
-==========================
+=================================
 
 This is a plugin for `pretix`_. 
 
