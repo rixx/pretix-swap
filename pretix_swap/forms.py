@@ -40,6 +40,14 @@ class SwapSettingsForm(SettingsForm):
             data["cancel_orderpositions_specific"] = False
 
 
+class ItemModelMultipleChoiceField(SafeModelMultipleChoiceField):
+    def label_from_instance(self, instance):
+        label = str(instance)
+        if instance.default_price:
+            return f"{label} ({instance.default_price}€)"
+        return f"{label} ({_('free')})"
+
+
 class SwapGroupForm(I18nModelForm):
     def __init__(self, *args, event=None, **kwargs):
         self.event = event
@@ -81,6 +89,11 @@ class SwapGroupForm(I18nModelForm):
                     )
                 ).format(items=items)
             )
+        prices = set()
+        for item in left | right:
+            prices.add(item.default_price)
+        if len(prices) > 1:
+            raise ValidationError(_("You can only swap elements with the same price!"))
         return cleaned_data
 
     class Meta:
@@ -92,8 +105,8 @@ class SwapGroupForm(I18nModelForm):
             "right",
         )
         field_classes = {
-            "left": SafeModelMultipleChoiceField,
-            "right": SafeModelMultipleChoiceField,
+            "left": ItemModelMultipleChoiceField,
+            "right": ItemModelMultipleChoiceField,
         }
 
 
