@@ -85,7 +85,11 @@ class SwapGroupForm(I18nModelForm):
 
     class Meta:
         model = SwapGroup
-        fields = ("name", "left", "right", "only_same_price", "price_tolerance")
+        fields = (
+            "name",
+            "left",
+            "right",
+        )
         field_classes = {
             "left": SafeModelMultipleChoiceField,
             "right": SafeModelMultipleChoiceField,

@@ -23,17 +23,6 @@ class SwapGroup(models.Model):
         "pretixbase.Item", blank=True, related_name="+", verbose_name=_("Group B")
     )
 
-    only_same_price = models.BooleanField(
-        default=True, verbose_name=_("Allow only swaps between equal priced items")
-    )
-    price_tolerance = models.DecimalField(
-        default=2,
-        decimal_places=2,
-        max_digits=10,
-        verbose_name=_("Price tolerance"),
-        help_text=_("Allow this much tolerance when comparing prices"),
-    )
-
     objects = ScopedManager(organizer="event__organizer")
 
 
@@ -163,7 +152,6 @@ class SwapRequest(models.Model):
             position__order__event_id=self.event.pk,
             position__item__in=items,
         ).first()
-        # TODO note the price matching setting
         if other:
             self.swap_with(other)
 
