@@ -1,12 +1,43 @@
 {% extends "pretixcontrol/event/base.html" %}
 {% load i18n %}
+{% load eventurl %}
 
 {% block title %}{% trans "Swap Request Statistics" %}{% endblock %}
 
 {% block content %}
     <h1>{% trans "Swap Request Statistics" %}</h1>
 
-    <h3>{% trans "Swap requests by state" %}</h3>
+    <h2>{% trans "Requests by product" %}</h2>
+    {% trans "This table shows the <b>open</b> requests with no match (paid or unpaid)." %}{#TODO words #}
+    <div class="table-responsive">
+        <table class="table table-hover table-quotas">
+            <thead>
+            <tr>
+                <th></th>
+                <th>{% trans "Swaps" %}</th>
+                <th>{% trans "Cancelations" %}</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+                {% for product in by_products %}
+                <tr>
+                    <th>
+                        <a href="{% eventurl request.event "control:event.item" organizer=request.organizer.slug event=request.event.slug item=product.item.id %}">
+                        {{ product.item }}
+                        </a>
+                    </th>
+                    <td>{{ product.open_swap_requests }}</td>
+                    <td>{{ product.open_cancelation_requests }}</td>
+                    <td></td>
+                </tr>
+                {% empty %}
+                <tr><td>{% trans "There are currently no open requests." %}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <h2>{% trans "Requests by state" %}</h2>
     <div class="table-responsive">
         <table class="table table-hover table-quotas">
             <thead>

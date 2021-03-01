@@ -29,8 +29,33 @@ class SwapStats(EventPermissionRequiredMixin, TemplateView):
 
     def get_context_data(self, *args, **kwargs):
         ctx = super().get_context_data(*args, **kwargs)
+        ctx["by_state"] = self._get_requests_by_state()
+        ctx["by_products"] = self._get_requests_by_product()
+        return ctx
+
+    def _get_requests_by_product(self):
+        requests = SwapRequest.objects.filter(
+            position__order__event=self.request.event,
+            state=SwapRequest.States.REQUESTED,
+            partner__isnull=True,
+        ).select_related("position", "position__item")
+        items = list(set(requests.values_list("position__item", flat=True)))
+        return [
+            {
+                "item": self.request.event.items.get(pk=item),
+                "open_swap_requests": requests.filter(
+                    swap_type=SwapRequest.Types.SWAP
+                ).count(),
+                "open_cancelation_requests": requests.filter(
+                    swap_type=SwapRequest.Types.CANCELATION
+                ).count(),
+            }
+            for item in items
+        ]
+
+    def _get_requests_by_state(self):
         requests = SwapRequest.objects.filter(position__order__event=self.request.event)
-        ctx["by_state"] = {
+        return {
             "swap": {
                 "open": len(
                     requests.filter(
@@ -72,7 +97,6 @@ class SwapStats(EventPermissionRequiredMixin, TemplateView):
                 ),
             },
         }
-        return ctx
 
 
 class SwapSettings(EventSettingsViewMixin, EventSettingsFormView):
