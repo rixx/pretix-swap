@@ -2,7 +2,7 @@ from django.dispatch import receiver
 from django.urls import resolve, reverse
 from django.utils.translation import gettext_lazy as _
 from pretix.base.settings import settings_hierarkey
-from pretix.control.signals import nav_event_settings
+from pretix.control.signals import nav_event, nav_event_settings
 from pretix.presale.signals import order_info, order_info_top
 
 BOOLEAN_SETTINGS = [
@@ -32,6 +32,30 @@ def navbar_settings(sender, request, **kwargs):
             ),
             "active": url.namespace == "plugins:pretix_swap"
             and "settings" in url.url_name,
+        }
+    ]
+
+
+@receiver(nav_event, dispatch_uid="swap_nav")
+def navbar_info(sender, request, **kwargs):
+    url = resolve(request.path_info)
+    if not request.user.has_event_permission(
+        request.organizer, request.event, "can_change_event_settings"
+    ):
+        return []
+    return [
+        {
+            "label": _("Swap overview"),
+            "icon": "random",
+            "url": reverse(
+                "plugins:pretix_swap:stats",
+                kwargs={
+                    "event": request.event.slug,
+                    "organizer": request.organizer.slug,
+                },
+            ),
+            "active": url.namespace == "plugins:pretix_swap"
+            and url.url_name == "stats",
         }
     ]
 
@@ -158,7 +182,9 @@ def order_info_bottom(sender, request, order, **kwargs):
             f'<a href="{link_map[action](position)}" class="btn btn-default"><i class="fa fa-{icon_map[action]}"></i> {text_map[action]}</a>'
             for action in entry["actions"]
         )
-        entry["attendee_name"] = f" ({position.attendee_name})" if position.attendee_name else ""
+        entry["attendee_name"] = (
+            f" ({position.attendee_name})" if position.attendee_name else ""
+        )
         entries.append(entry)
 
     entries_text = "".join(

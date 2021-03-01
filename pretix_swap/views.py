@@ -23,6 +23,58 @@ from .forms import SwapGroupForm, SwapRequestForm, SwapSettingsForm
 from .models import SwapGroup, SwapState
 
 
+class SwapStats(EventPermissionRequiredMixin, TemplateView):
+    permission = "can_change_event_settings"
+    template_name = "pretix_swap/control/stats.html"
+
+    def get_context_data(self, *args, **kwargs):
+        ctx = super().get_context_data(*args, **kwargs)
+        requests = SwapState.objects.filter(position__order__event=self.request.event)
+        ctx["by_state"] = {
+            "swap": {
+                "open": len(
+                    requests.filter(
+                        swap_type=SwapState.SwapTypes.SWAP,
+                        state=SwapState.SwapStates.REQUESTED,
+                    )
+                ),
+                "done": len(
+                    requests.filter(
+                        swap_type=SwapState.SwapTypes.SWAP,
+                        state=SwapState.SwapStates.COMPLETED,
+                    )
+                ),
+                "total": len(
+                    requests.filter(
+                        swap_type=SwapState.SwapTypes.SWAP,
+                        state=SwapState.SwapStates.REQUESTED,
+                    )
+                ),
+            },
+            "cancel": {
+                "open": len(
+                    requests.filter(
+                        swap_type=SwapState.SwapTypes.CANCELATION,
+                        state=SwapState.SwapStates.REQUESTED,
+                    )
+                ),
+                "done": len(
+                    requests.filter(
+                        swap_type=SwapState.SwapTypes.CANCELATION,
+                        state=SwapState.SwapStates.COMPLETED,
+                    )
+                ),
+                "total": len(
+                    requests.filter(
+                        swap_type=SwapState.SwapTypes.CANCELATION,
+                        state=SwapState.SwapStates.REQUESTED,
+                    )
+                ),
+            },
+        }
+        return ctx
+
+
 class SwapSettings(EventSettingsViewMixin, EventSettingsFormView):
     model = Event
     permission = "can_change_settings"

@@ -1,0 +1,39 @@
+{% extends "pretixcontrol/event/base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Swap Request Statistics" %}{% endblock %}
+
+{% block content %}
+    <h1>{% trans "Swap Request Statistics" %}</h1>
+
+    <h3>{% trans "Swap requests by state" %}</h3>
+    <div class="table-responsive">
+        <table class="table table-hover table-quotas">
+            <thead>
+            <tr>
+                <th></th>
+                <th>{% trans "Swaps" %}</th>
+                <th>{% trans "Cancelations" %}</th>
+            </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <th>{% trans "Requested" %}</th>
+                    <td>{{ by_state.swap.open }}</td>
+                    <td>{{ by_state.cancel.open }}</td>
+                </tr>
+                <tr>
+                    <th>{% trans "Completed" %}</th>
+                    <td>{{ by_state.swap.done }}</td>
+                    <td>{{ by_state.cancel.done }}</td>
+                </tr>
+                <tr>
+                    <th>{% trans "Total" %}</th>
+                    <th>{{ by_state.swap.total }}</th>
+                    <th>{{ by_state.cancel.total }}</th>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+{% endblock %}
+

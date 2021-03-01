@@ -23,6 +23,11 @@ urlpatterns = [
         views.SwapGroupDelete.as_view(),
         name="settings.delete",
     ),
+    url(
+        r"^control/event/(?P<organizer>[^/]+)/(?P<event>[^/]+)/swap$",
+        views.SwapStats.as_view(),
+        name="stats",
+    ),
 ]
 
 from pretix.multidomain import event_url
