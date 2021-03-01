@@ -4,12 +4,22 @@
 {% load eventurl %}
 {% load static %}
 
-{% block title %}{% trans "New swap request" %}{% endblock %}
+{% block title %}{% trans "New request" %}{% endblock %}
 {% block content %}
     <h2>
-        {% blocktrans trimmed with code=order.code %}
-            New swap request for your order: {{ code }}
-        {% endblocktrans %}
+        {% if form.fields.swap_type.choices|length > 1 %}
+            {% blocktrans trimmed with code=order.code %}
+                Request to swap or cancel your order: {{ code }}
+            {% endblocktrans %}
+        {% elif form.fields.swap_type.choices.0.0 == "s" %}
+            {% blocktrans trimmed with code=order.code %}
+                Request to swap your order: {{ code }}
+            {% endblocktrans %}
+        {% else %}
+            {% blocktrans trimmed with code=order.code %}
+                Request to cancel your order: {{ code }}
+            {% endblocktrans %}
+        {% endif %}
         {% if order.testmode %}
             <span class="label label-warning">{% trans "TEST MODE" %}</span>
         {% endif %}
@@ -21,13 +31,20 @@
         <div class="clearfix"></div>
     </h2>
     <form method="post">{% csrf_token %}
-    {% bootstrap_field form.position %}
+    {% if form.position %}
+        {% bootstrap_field form.position %}
+    {% endif %}
+    {% if form.swap_type %}
+        {% bootstrap_field form.swap_type %}
+    {% endif %}
     {% for field in form.position_fields %}
         {% bootstrap_field field %}
     {% endfor %}
-    {% bootstrap_field form.swap_type %}
     {% if form.swap_method %}
         {% bootstrap_field form.swap_method %}
+    {% endif %}
+    {% if form.cancel_method %}
+        {% bootstrap_field form.cancel_method %}
     {% endif %}
     {% if form.swap_code %}
         {% bootstrap_field form.swap_code %}

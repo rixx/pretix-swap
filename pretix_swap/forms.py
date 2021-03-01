@@ -2,7 +2,7 @@ from django import forms
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
-from django_scopes.forms import SafeModelChoiceField, SafeModelMultipleChoiceField
+from django_scopes.forms import SafeModelMultipleChoiceField
 from i18nfield.forms import I18nModelForm
 from pretix.base.forms import SettingsForm
 from pretix.base.models import Item
@@ -135,7 +135,7 @@ class PositionModelChoiceField(forms.ModelChoiceField):
         return label
 
 
-class SwapRequestForm(forms.ModelForm):
+class SwapRequestForm(forms.Form):
     def __init__(self, *args, order=None, swap_actions=None, **kwargs):
         self.order = order
         self.event = order.event
@@ -170,22 +170,13 @@ class SwapRequestForm(forms.ModelForm):
             field.position = position
             self.fields[f"position_choice_{position.pk}"] = field
 
-        self.action = None
-        if len(swap_actions) == 1:
-            self.swap_type = swap_actions[0]
-        else:  # We can both swap and cancel
-            self.fields["swap_type"] = forms.ChoiceField(
-                choices=[
-                    (SwapRequest.Types.SWAP, _("Request a swap")),
-                    (SwapRequest.Types.CANCELATION, _("Request cancelation")),
-                ],
-                label=_("What do you want to do?"),
-                help_text=_(
-                    "Leave this field empty if you're okay with any of these options.",
-                ),
-            )
+        self.fields["swap_type"] = forms.ChoiceField(
+            initial=swap_actions[0],
+            choices=swap_actions,
+            label=_("What do you want to do?"),
+        )
         if (
-            SwapRequest.Types.SWAP in swap_actions
+            any(SwapRequest.Types.SWAP == action[0] for action in swap_actions)
             and self.event.settings.swap_orderpositions_specific
         ):
             self.fields["swap_code"] = forms.CharField(
@@ -195,8 +186,21 @@ class SwapRequestForm(forms.ModelForm):
                     "Do you already know who you want to swap with? Enter their swap code here!"
                 ),
             )
+            self.fields["swap_method"] = forms.ChoiceField(
+                label=_("Swap method"),
+                choices=(
+                    (
+                        SwapRequest.Methods.FREE,
+                        _("Switch with the next interested person."),
+                    ),
+                    (
+                        SwapRequest.Methods.SPECIFIC,
+                        _("I want to switch with a specific person."),
+                    ),
+                ),
+            )
         if (
-            SwapRequest.Types.CANCELATION in swap_actions
+            any(SwapRequest.Types.CANCELATION == action[0] for action in swap_actions)
             and self.event.settings.cancel_orderpositions_specific
         ):
             self.fields["cancel_code"] = forms.CharField(
@@ -206,8 +210,19 @@ class SwapRequestForm(forms.ModelForm):
                     "Do you already know who should take your place? Enter their waiting list code here!"
                 ),
             )
-        if "cancel_code" not in self.fields and "swap_code" not in self.fields:
-            self.fields.pop("swap_method")
+            self.fields["cancel_method"] = forms.ChoiceField(
+                label=_("Cancelation method"),
+                choices=(
+                    (
+                        SwapRequest.Methods.FREE,
+                        _("Give my place to the next person in line."),
+                    ),
+                    (
+                        SwapRequest.Methods.SPECIFIC,
+                        _("I want my place to go to a specific person."),
+                    ),
+                ),
+            )
 
     @property
     def position_fields(self):
@@ -219,12 +234,18 @@ class SwapRequestForm(forms.ModelForm):
 
     def save(self):
         data = self.cleaned_data
+        swap_type = data.get("swap_type")
+        swap_method = (
+            data.get("cancel_method")
+            if swap_type == SwapRequest.Types.CANCELATION
+            else data.get("swap_method")
+        )
         instance = SwapRequest.objects.create(
             position=data["position"],
             target_item=data.get(f"position{data['position'].pk}"),
             state=SwapRequest.States.REQUESTED,
-            swap_type=data.get("swap_type") or self.swap_type,
-            swap_method=data.get("swap_method") or SwapRequest.Methods.FREE,
+            swap_type=swap_type,
+            swap_method=swap_method or SwapRequest.Methods.FREE,
         )
         instance.position.order.log_action(
             "pretix_swap.swap.request",
@@ -286,10 +307,3 @@ class SwapRequestForm(forms.ModelForm):
 
         # TODO find cart or … something? help?
         return data
-
-    class Meta:
-        model = SwapRequest
-        field_classes = {
-            "position": SafeModelChoiceField,
-        }
-        fields = ("swap_method",)
