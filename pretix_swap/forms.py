@@ -254,6 +254,17 @@ class SwapRequestForm(forms.ModelForm):
         ).first()
         if not partner:
             raise ValidationError(_("Unknown swap code!"))
+        position = self.cleaned_data.get("position")
+        items = get_swappable_items(position)
+        if partner.position.item not in items:
+            raise ValidationError(
+                str(
+                    _(
+                        "The swap code you entered is for the item '{other_item}', "
+                        "which is not compatible with your item '{your_item}'."
+                    )
+                ).format(other_item=partner.position.item, your_item=position.item)
+            )
         # TODO validate that the items are actually compatible!
         self.partner = partner
         return partner
