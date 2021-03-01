@@ -131,7 +131,7 @@ class SwapRequest(models.Model):
     def get_notification_actions(self):
         if self.state == self.States.COMPLETED:
             return []
-        if self.partner or self.partner_cart:
+        if self.partner:
             return []  # ["view"]
         return ["abort"]  # ["view", "abort"]
 
@@ -150,6 +150,8 @@ class SwapRequest(models.Model):
         if (
             not self.state == self.States.REQUESTED
             and other.state == self.States.REQUESTED
+            and not self.partner
+            and not other.partner
         ):
             raise Exception("Both requests have to be in the 'requesting' state.")
         if not self.position.price == other.position.price:
@@ -157,15 +159,37 @@ class SwapRequest(models.Model):
         my_change_manager.change_item(
             position=self.position, item=other_item, variation=other_variation
         )
-        my_change_manager.commit()
         other_change_manager.change_item(
             position=other.position, item=my_item, variation=my_variation
         )
+        my_change_manager.commit()
         other_change_manager.commit()
         self.state = self.States.COMPLETED
+        self.partner = other
         self.save()
         other.state = self.States.COMPLETED
+        other.partner = self
         other.save()
+        self.position.order.log_action(
+            "pretix_swap.swap.complete",
+            data={
+                "position": self.position.pk,
+                "positionid": self.position.positionid,
+                "other_position": other.position,
+                "other_positionid": other.positionid,
+                "other_order": other.position.order.code,
+            },
+        )
+        other.position.order.log_action(
+            "pretix_swap.swap.complete",
+            data={
+                "position": other.position.pk,
+                "positionid": other.position.positionid,
+                "other_position": self.position,
+                "other_positionid": self.positionid,
+                "other_order": self.position.order.code,
+            },
+        )
 
     def attempt_swap(self):
         """Find a swap partner.
@@ -185,6 +209,7 @@ class SwapRequest(models.Model):
             swap_type=SwapRequest.Types.SWAP,
             position__order__event_id=self.event.pk,
             position__item__in=items,
+            partner__isnull=True,
         ).first()
         if other:
             self.swap_with(other)

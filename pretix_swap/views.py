@@ -168,6 +168,18 @@ class SwapGroupDelete(EventPermissionRequiredMixin, DeleteView):
     template_name = "pretix_swap/control/delete.html"
     model = SwapGroup
 
+    def delete(self, request, *args, **kwargs):
+        position = self.get_object().position
+        result = super().delete(request, *args, **kwargs)
+        position.order.log_action(
+            "pretix_swap.swap.cancel",
+            data={
+                "position": position.pk,
+                "positionid": position.positionid,
+            },
+        )
+        return result
+
     def get_success_url(self):
         return reverse(
             "plugins:pretix_swap:settings",

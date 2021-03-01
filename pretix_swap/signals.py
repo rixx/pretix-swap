@@ -2,6 +2,7 @@ from django.dispatch import receiver
 from django.urls import resolve, reverse
 from django.utils.translation import gettext_lazy as _
 from pretix.base.settings import settings_hierarkey
+from pretix.base.signals import logentry_display, logentry_object_link
 from pretix.control.signals import nav_event, nav_event_settings
 from pretix.presale.signals import order_info, order_info_top
 
@@ -207,3 +208,45 @@ def order_info_bottom(sender, request, order, **kwargs):
     """
 
     return result
+
+
+@receiver(logentry_display, dispatch_uid="swap_logentries")
+def swap_logentry_display(sender, logentry, *args, **kwargs):
+    if logentry.action_type == "pretix_swap.swap.cancel":
+        return str(_("The request to swap position #{id} has been canceled.")).format(
+            id=logentry.parsed_data["positionid"]
+        )
+    if logentry.action_type == "pretix_swap.swap.request":
+        return str(_("The user has requested to swap position #{id}.")).format(
+            id=logentry.parsed_data["positionid"]
+        )
+    if logentry.action_type == "pretix_swap.swap.complete":
+        return str(
+            _(
+                "Order position #{id} has been swapped with position #{other_id} of order {order}."
+            )
+        ).format(
+            id=logentry.parsed_data["positionid"],
+            other_id=logentry.parsed_data["other_positionid"],
+            order=logentry.parsed_data["other_order"],
+        )
+
+
+@receiver(logentry_object_link, dispatch_uid="swap_logentries_link")
+def swap_logentry_display_link(sender, logentry, *args, **kwargs):
+    if logentry.action_type == "pretix_swap.swap.complete":
+        a_text = _("Order {val}#{position}")
+        a_map = {
+            "href": reverse(
+                "control:event.order",
+                kwargs={
+                    "event": sender.slug,
+                    "organizer": sender.organizer.slug,
+                    "code": logentry.parsed_data["other_order"],
+                },
+            ),
+            "val": logentry.content_object.parsed_data["other_order"],
+            "position": logentry.content_object.parsed_data["other_positionid"],
+        }
+        a_map["val"] = '<a href="{href}">{val}</a>'.format_map(a_map)
+        return a_text.format_map(a_map)

@@ -226,6 +226,13 @@ class SwapRequestForm(forms.ModelForm):
             swap_type=data.get("swap_type") or self.swap_type,
             swap_method=data.get("swap_method") or SwapRequest.Methods.FREE,
         )
+        instance.position.order.log_action(
+            "pretix_swap.swap.request",
+            data={
+                "position": instance.position.pk,
+                "positionid": instance.position.positionid,
+            },
+        )
         if instance.swap_type == SwapRequest.Types.SWAP:
             if data.get("swap_code"):
                 instance.swap_with(data.get("swap_code"))
