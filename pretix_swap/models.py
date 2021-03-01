@@ -74,17 +74,11 @@ class SwapRequest(models.Model):
         null=True,
     )
     partner = models.ForeignKey(
-        "pretixbase.OrderPosition",
+        "self",
         related_name="+",
         on_delete=models.SET_NULL,
         null=True,
     )
-    partner_cart = models.ForeignKey(
-        "pretixbase.CartPosition",
-        related_name="+",
-        on_delete=models.SET_NULL,
-        null=True,
-    )  # Cancellations and swaps can go towards cartpositions instead of orderpositions
 
     requested = models.DateTimeField(auto_now_add=True)
     completed = models.DateTimeField(null=True)
