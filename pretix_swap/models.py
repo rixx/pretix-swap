@@ -167,7 +167,7 @@ class SwapRequest(models.Model):
                 "position": self.position.pk,
                 "positionid": self.position.positionid,
                 "other_position": other.position,
-                "other_positionid": other.positionid,
+                "other_positionid": other.position.positionid,
                 "other_order": other.position.order.code,
             },
         )
@@ -177,7 +177,7 @@ class SwapRequest(models.Model):
                 "position": other.position.pk,
                 "positionid": other.position.positionid,
                 "other_position": self.position,
-                "other_positionid": self.positionid,
+                "other_positionid": self.position.positionid,
                 "other_order": self.position.order.code,
             },
         )

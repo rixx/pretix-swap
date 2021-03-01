@@ -270,9 +270,7 @@ class SwapRequestForm(forms.Form):
         data = self.cleaned_data.get("swap_code")
         if not data:
             return data
-        if self.action and self.action != SwapRequest.Types.SWAP:
-            return
-        if self.cleaned_data.get("action") != SwapRequest.Types.SWAP:
+        if self.cleaned_data.get("swap_type") != SwapRequest.Types.SWAP:
             return
 
         partner = SwapRequest.objects.filter(
@@ -283,7 +281,7 @@ class SwapRequestForm(forms.Form):
         if not partner:
             raise ValidationError(_("Unknown swap code!"))
         position = self.cleaned_data.get("position")
-        items = get_swappable_items(position)
+        items = get_swappable_items(position.item)
         if partner.position.item not in items:
             raise ValidationError(
                 str(
