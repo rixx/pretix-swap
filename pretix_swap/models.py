@@ -44,7 +44,9 @@ class SwapApproval(models.Model):
     order = models.OneToOneField(
         "pretixbase.Order", related_name="swap_approval", on_delete=models.CASCADE
     )
-    approved_for_cancelation_request = models.BooleanField(default=True)
+    approved_for_cancelation_request = models.BooleanField(
+        default=True
+    )  # Currently always True
 
 
 class SwapRequest(models.Model):
@@ -80,7 +82,7 @@ class SwapRequest(models.Model):
         on_delete=models.CASCADE,
         null=True,
     )
-    partner = models.ForeignKey(  # Only set on completed swaps
+    partner = models.ForeignKey(  # Only set on completed swaps. Not used except for auditability.
         "self",
         related_name="+",
         on_delete=models.SET_NULL,
@@ -149,6 +151,8 @@ class SwapRequest(models.Model):
             raise Exception("Both requests have to be in the 'requesting' state.")
         if not self.position.price == other.position.price:
             raise Exception("Both requests have to have the same price.")
+        if self.target_item and other.position.item != self.target_item:
+            raise Exception("Incompatible item!")
         my_change_manager.change_item(
             position=self.position, item=other_item, variation=other_variation
         )
@@ -197,7 +201,13 @@ class SwapRequest(models.Model):
 
         # TODO validate that the items are compatible with target_item
         items = get_swappable_items(self.position.item)
+        if self.target_item:
+            if self.target_item not in items:
+                raise Exception("Target item not allowed")
+            items = [self.target_item]
         other = SwapRequest.objects.filter(
+            models.Q(target_item__isnull=True)
+            | models.Q(target_item=self.position.item),
             state=SwapRequest.States.REQUESTED,
             swap_method=SwapRequest.Methods.FREE,
             swap_type=SwapRequest.Types.SWAP,
