@@ -252,6 +252,8 @@ class SwapRequestForm(forms.Form):
             data={
                 "position": instance.position.pk,
                 "positionid": instance.position.positionid,
+                "swap_type": instance.swap_type,
+                "swap_method": instance.swap_method,
             },
         )
         if instance.swap_type == SwapRequest.Types.SWAP:

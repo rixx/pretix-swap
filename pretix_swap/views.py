@@ -90,12 +90,12 @@ class SwapStats(EventPermissionRequiredMixin, FormView):
             if approved >= count:
                 break
             try:
+                SwapApproval.objects.create(order=position.order)
                 approve_order(
                     position.order,
                     user=self.request.user,
                     send_mail=True,
                 )
-                SwapApproval.objects.create(order=position.order)
                 approved += 1
             except OrderError as e:
                 position.order.log_action(

@@ -5,7 +5,7 @@ from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 from django_scopes import ScopedManager
 from i18nfield.fields import I18nCharField
-from pretix.base.services.orders import OrderChangeManager
+from pretix.base.services.orders import OrderChangeManager, OrderError, cancel_order
 
 
 class SwapGroup(models.Model):
@@ -41,7 +41,7 @@ def generate_swap_code():
 
 
 class SwapApproval(models.Model):
-    position = models.OneToOneField(
+    order = models.OneToOneField(
         "pretixbase.Order", related_name="swap_approval", on_delete=models.CASCADE
     )
     approved_for_cancelation_request = models.BooleanField(default=True)
@@ -215,15 +215,19 @@ class SwapRequest(models.Model):
             raise Exception("Order position canceling is currently not allowed")
 
         # TODO maybe notify=False, our own notification
-        change_manager = OrderChangeManager(order=self.position.order)
 
         # Make sure AGAIN that the state is alright, because timings
         if not self.state == self.States.REQUESTED:
             raise Exception("Not in 'requesting' state.")
         if self.position.price > other.price:
             raise Exception("Cannot cancel for a cheaper product.")
-        change_manager.cancel(position=self.position)
-        change_manager.commit()
+
+        try:
+            change_manager = OrderChangeManager(order=self.position.order)
+            change_manager.cancel(position=self.position)
+            change_manager.commit()
+        except OrderError:  # Let's hope this order error is because we're trying to empty the order
+            cancel_order(self.position.order.pk)
         self.state = self.States.COMPLETED
         self.save()
         self.position.order.log_action(

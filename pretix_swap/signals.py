@@ -147,16 +147,22 @@ def swap_logentry_display(sender, logentry, *args, **kwargs):
             "to match a cancelation request, but no matching cancelation request was found."
         ),
     }
-    if logentry_display.action_type in simple_displays:
+    if logentry.action_type in simple_displays:
         return simple_displays.get(logentry.action_type)
     if logentry.action_type == "pretix_swap.swap.cancel":
         return str(_("The request to swap position #{id} has been canceled.")).format(
             id=logentry.parsed_data["positionid"]
         )
     if logentry.action_type == "pretix_swap.swap.request":
-        return str(_("The user has requested to swap position #{id}.")).format(
-            id=logentry.parsed_data["positionid"]
-        )
+        swap_type = logentry.parsed_data.get("swap_type") or "s"
+        if swap_type == "s":
+            return str(_("The user has requested to swap position #{id}.")).format(
+                id=logentry.parsed_data["positionid"]
+            )
+        else:
+            return str(_("The user has requested to cancel position #{id}.")).format(
+                id=logentry.parsed_data["positionid"]
+            )
     if logentry.action_type == "pretix_swap.swap.complete":
         return str(
             _(
@@ -165,6 +171,15 @@ def swap_logentry_display(sender, logentry, *args, **kwargs):
         ).format(
             id=logentry.parsed_data["positionid"],
             other_id=logentry.parsed_data["other_positionid"],
+            order=logentry.parsed_data["other_order"],
+        )
+    if logentry.action_type == "pretix_swap.cancelation.complete":
+        return str(
+            _(
+                "Order position #{id} has been canceled after order {order} was marked as paid."
+            )
+        ).format(
+            id=logentry.parsed_data["positionid"],
             order=logentry.parsed_data["other_order"],
         )
     if logentry.action_type == "pretix_swap.cancelation.approve_failed":
@@ -178,7 +193,7 @@ def swap_logentry_display(sender, logentry, *args, **kwargs):
 
 
 @receiver(logentry_object_link, dispatch_uid="swap_logentries_link")
-def swap_logentry_display_link(sender, logentry, *args, **kwargs):
+def swap_logentry_display_link(logentry, sender, *args, **kwargs):
     if logentry.action_type == "pretix_swap.swap.complete":
         a_text = _("Order {val}#{position}")
         a_map = {
@@ -199,10 +214,10 @@ def swap_logentry_display_link(sender, logentry, *args, **kwargs):
 
 @receiver(order_paid, dispatch_uid="swap_order_paid")
 def swap_order_paid(order, sender, *args, **kwargs):
-    swap_approval = getattr(order, "swap_approval")
+    swap_approval = getattr(order, "swap_approval", None)
     if not order.event.settings.cancel_orderpositions:
         return
-    if not swap_approval or not swap_approval.approve_for_cancelation_request:
+    if not swap_approval or not swap_approval.approved_for_cancelation_request:
         return
 
     from .models import SwapRequest
