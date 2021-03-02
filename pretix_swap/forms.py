@@ -8,7 +8,7 @@ from pretix.base.forms import SettingsForm
 from pretix.base.models import Item
 
 from .models import SwapGroup, SwapRequest
-from .utils import get_applicable_items, get_swappable_items
+from .utils import get_applicable_items, get_cancelable_items, get_swappable_items
 
 
 class SwapSettingsForm(SettingsForm):
@@ -243,6 +243,7 @@ class SwapRequestForm(forms.Form):
         instance = SwapRequest.objects.create(
             position=data["position"],
             target_item=data.get(f"position{data['position'].pk}"),
+            target_order=data.get("cancel_code"),
             state=SwapRequest.States.REQUESTED,
             swap_type=swap_type,
             swap_method=swap_method or SwapRequest.Methods.FREE,
@@ -298,15 +299,36 @@ class SwapRequestForm(forms.Form):
 
     def clean_cancel_code(self):
         data = self.cleaned_data.get("cancel_code")
+        if self.cleaned_data.get("swap_type") != SwapRequest.Types.CANCELATION:
+            return
+        if self.cleaned_data.get("swap_method") != SwapRequest.Methods.SPECIFIC:
+            return
         if not data:
-            return data
-        if self.action and self.action != SwapRequest.Types.CANCELATION:
-            return
-        if self.cleaned_data.get("action") != SwapRequest.Types.CANCELATION:
-            return
+            raise ValidationError(
+                _(
+                    "If you want to give your ticket to somebody specific, please provide a cancelation code."
+                )
+            )
 
-        # TODO find cart or … something? help?
-        return data
+        order = self.event.orders.filter(code__iexact=data).first()
+        if not order:
+            raise ValidationError(_("Unknown cancelation code."))
+
+        position = self.cleaned_data.get("position")
+        items = get_cancelable_items(position.item)
+        other_position = (
+            order.positions.first()
+        )  # TODO we just assume that this order has only one position
+        if other_position.item not in items:
+            raise ValidationError(
+                str(
+                    _(
+                        "The cancelation code you entered is for the item '{other_item}', "
+                        "which is not compatible with your item '{your_item}'."
+                    )
+                ).format(other_item=other_position.item, your_item=position.item)
+            )
+        return order
 
 
 class CancelationForm(forms.Form):

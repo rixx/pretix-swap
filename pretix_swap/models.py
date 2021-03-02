@@ -82,6 +82,14 @@ class SwapRequest(models.Model):
         on_delete=models.CASCADE,
         null=True,
     )
+    target_order = (
+        models.ForeignKey(  # Used on specific (non-free) cancelation requests
+            "pretixbase.Order",
+            related_name="cancelation_request",
+            on_delete=models.CASCADE,
+            null=True,
+        )
+    )
     partner = models.ForeignKey(  # Only set on completed swaps. Not used except for auditability.
         "self",
         related_name="+",
