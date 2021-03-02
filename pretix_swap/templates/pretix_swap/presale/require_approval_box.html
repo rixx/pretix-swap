@@ -6,10 +6,11 @@
         <h3 class="panel-title">{% trans "Ticket transfer" %}</h3>
     </div>
     <div class="panel-body">
-        {% trans "If you know somebody who has a ticket and would like to pass it to you, give them this secret token to enter on their ticket page:" %}
-        <span data-toggle="tooltip" data-placement="bottom" title="{% trans "Click to copy" %}" class="secret copyable" data-destination="{{ secret }}">
+        {% trans "If you know somebody who has a ticket and would like to pass it to you, give them this token (your order code) to enter on their ticket page:" %}
+            <span class="btn btn-default">
+        <span data-toggle="tooltip" data-placement="bottom" title="{% trans "Click to copy" %}" class="copyable" data-destination="{{ secret }}">
             {{ secret }}
-        </span>
+            </span></span>
     </div>
 </div>
 
