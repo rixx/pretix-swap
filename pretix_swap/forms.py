@@ -257,25 +257,40 @@ class SwapRequestForm(forms.Form):
                 "swap_method": instance.swap_method,
             },
         )
-        if instance.swap_type == SwapRequest.Types.SWAP:
+        if instance.swap_type == SwapRequest.Types.SWAP:  # Only swaps are instantaneous
             if data.get("swap_code"):
                 instance.swap_with(data.get("swap_code"))
             elif instance.swap_method == SwapRequest.Methods.FREE:
                 instance.attempt_swap()
-        elif instance.swap_type == SwapRequest.Types.CANCELATION:
-            if data.get("cancel_code"):
-                instance.cancel_for(data.get("swap_code"))
-            elif instance.swap_method == SwapRequest.Methods.FREE:
-                instance.attempt_swap()
+        elif instance.target_order:
+            instance.target_order.log_action(
+                "pretix_swap.cancelation.offer_created",
+                data={
+                    "other_order": instance.position.order.code,
+                    "other_position": instance.position.id,
+                    "other_positionid": instance.positionid,
+                },
+            )
         return instance
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if not (
+            cleaned_data["swap_type"] == SwapRequest.Types.SWAP
+            and cleaned_data["swap_method"] == SwapRequest.Methods.SPECIFIC
+        ):
+            cleaned_data["swap_code"] = None
+        if not (
+            cleaned_data["swap_type"] == SwapRequest.Types.CANCELATION
+            and cleaned_data["cancel_method"] == SwapRequest.Methods.SPECIFIC
+        ):
+            cleaned_data["cancel_code"] = None
+        return cleaned_data
 
     def clean_swap_code(self):
         data = self.cleaned_data.get("swap_code")
         if not data:
             return data
-        if self.cleaned_data.get("swap_type") != SwapRequest.Types.SWAP:
-            return
-
         partner = SwapRequest.objects.filter(
             position__order__event=self.event,
             swap_code=data,
@@ -283,7 +298,9 @@ class SwapRequestForm(forms.Form):
         ).first()
         if not partner:
             raise ValidationError(_("Unknown swap code!"))
-        position = self.cleaned_data.get("position")
+        position = self.cleaned_data.get(
+            "position"
+        )  # TODO this is a potential error source
         items = get_swappable_items(position.item)
         if partner.position.item not in items:
             raise ValidationError(
@@ -299,10 +316,6 @@ class SwapRequestForm(forms.Form):
 
     def clean_cancel_code(self):
         data = self.cleaned_data.get("cancel_code")
-        if self.cleaned_data.get("swap_type") != SwapRequest.Types.CANCELATION:
-            return
-        if self.cleaned_data.get("swap_method") != SwapRequest.Methods.SPECIFIC:
-            return
         if not data:
             raise ValidationError(
                 _(
@@ -314,7 +327,9 @@ class SwapRequestForm(forms.Form):
         if not order:
             raise ValidationError(_("Unknown cancelation code."))
 
-        position = self.cleaned_data.get("position")
+        position = self.cleaned_data.get(
+            "position"
+        )  # TODO this is a potential error source
         items = get_cancelable_items(position.item)
         other_position = (
             order.positions.first()
@@ -327,6 +342,17 @@ class SwapRequestForm(forms.Form):
                         "which is not compatible with your item '{your_item}'."
                     )
                 ).format(other_item=other_position.item, your_item=position.item)
+            )
+        if SwapRequest.objects.filter(
+            target_order=order,
+            state=SwapRequest.States.REQUESTED,
+            swap_type=SwapRequest.Types.CANCELATION,
+            swap_method=SwapRequest.Methods.SPECIFIC,
+        ).exists():
+            raise ValidationError(
+                _(
+                    "Somebody else has already requested to pass their ticket to this order."
+                )
             )
         return order
 

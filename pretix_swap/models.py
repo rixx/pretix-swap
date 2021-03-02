@@ -247,6 +247,7 @@ class SwapRequest(models.Model):
         except OrderError:  # Let's hope this order error is because we're trying to empty the order
             cancel_order(self.position.order.pk)
         self.state = self.States.COMPLETED
+        self.target_order = other  # Should be set already, let's just make sure
         self.save()
         self.position.order.log_action(
             "pretix_swap.cancelation.complete",

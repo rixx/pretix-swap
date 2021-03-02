@@ -109,6 +109,9 @@ def notifications_order_info_top(sender, request, order, **kwargs):
 
 @receiver(order_info, dispatch_uid="swap_order_info")
 def order_info_bottom(sender, request, order, **kwargs):
+    from .models import SwapRequest
+    from .utils import get_applicable_items
+
     event = request.event
 
     if not order.status == "p":
@@ -120,10 +123,13 @@ def order_info_bottom(sender, request, order, **kwargs):
         ):
             return
         template = get_template("pretix_swap/presale/require_approval_box.html")
-        return template.render({"secret": order.code})
-
-    from .models import SwapRequest
-    from .utils import get_applicable_items
+        in_progress = SwapRequest.objects.filter(
+            target_order=order,
+            state=SwapRequest.States.REQUESTED,
+            swap_type=SwapRequest.Types.CANCELATION,
+            swap_method=SwapRequest.Methods.SPECIFIC,
+        ).exists()
+        return template.render({"secret": order.code, "in_progress": in_progress})
 
     items = get_applicable_items(event)
 
@@ -180,6 +186,15 @@ def swap_logentry_display(sender, logentry, *args, **kwargs):
         ).format(
             id=logentry.parsed_data["positionid"],
             other_id=logentry.parsed_data["other_positionid"],
+            order=logentry.parsed_data["other_order"],
+        )
+    if logentry.action_type == "pretix_swap.cancelation.offer_created":
+        return str(
+            _(
+                "The order {order}#{position} has requested to cancel in favour of this order."
+            )
+        ).format(
+            position=logentry.parsed_data["other_positionid"],
             order=logentry.parsed_data["other_order"],
         )
     if logentry.action_type == "pretix_swap.cancelation.complete":
