@@ -3,7 +3,7 @@ from django.template.loader import get_template
 from django.urls import resolve, reverse
 from django.utils.translation import gettext_lazy as _
 from pretix.base.settings import settings_hierarkey
-from pretix.base.signals import logentry_display, logentry_object_link
+from pretix.base.signals import logentry_display, logentry_object_link, order_paid
 from pretix.control.signals import nav_event, nav_event_settings
 from pretix.presale.signals import order_info, order_info_top
 
@@ -141,6 +141,14 @@ def order_info_bottom(sender, request, order, **kwargs):
 
 @receiver(logentry_display, dispatch_uid="swap_logentries")
 def swap_logentry_display(sender, logentry, *args, **kwargs):
+    simple_displays = {
+        "pretix_swap.cancelation.no_partner": _(
+            "The order was marked as paid and expected "
+            "to match a cancelation request, but no matching cancelation request was found."
+        ),
+    }
+    if logentry_display.action_type in simple_displays:
+        return simple_displays.get(logentry.action_type)
     if logentry.action_type == "pretix_swap.swap.cancel":
         return str(_("The request to swap position #{id} has been canceled.")).format(
             id=logentry.parsed_data["positionid"]
@@ -160,6 +168,10 @@ def swap_logentry_display(sender, logentry, *args, **kwargs):
             order=logentry.parsed_data["other_order"],
         )
     if logentry.action_type == "pretix_swap.cancelation.approve_failed":
+        return str(_("Approval failed with error message: {e}")).format(
+            e=logentry.parsed_data["detail"]
+        )
+    if logentry.action_type == "pretix_swap.cancelation.cancelation_failed":
         return str(_("Approval failed with error message: {e}")).format(
             e=logentry.parsed_data["detail"]
         )
@@ -183,3 +195,50 @@ def swap_logentry_display_link(sender, logentry, *args, **kwargs):
         }
         a_map["val"] = '<a href="{href}">{val}</a>'.format_map(a_map)
         return a_text.format_map(a_map)
+
+
+@receiver(order_paid, dispatch_uid="swap_order_paid")
+def swap_order_paid(order, sender, *args, **kwargs):
+    swap_approval = getattr(order, "swap_approval")
+    if not order.event.settings.cancel_orderpositions:
+        return
+    if not swap_approval or not swap_approval.approve_for_cancelation_request:
+        return
+
+    from .models import SwapRequest
+    from .utils import get_cancelable_items
+
+    for position in order.positions.all():
+        items = [
+            i
+            for i in get_cancelable_items(position.item)
+            if i.default_price <= position.price
+        ]
+        # First, check if there are specific cancelation request, if
+        # if not order.event.settings.cancel_orderpositions_specific:
+        # TODO specific cancelation
+        # Next go through the oldest cancelation requests that are compatible
+        requests = SwapRequest.objects.filter(
+            state=SwapRequest.States.REQUESTED,
+            swap_type=SwapRequest.Types.CANCELATION,
+            swap_method=SwapRequest.Methods.FREE,
+            position__item__in=items,
+        )
+        if not requests:
+            order.log_action(
+                "pretix_swap.cancelation.no_partner",
+                data={
+                    "position": position.pk,
+                    "positionid": position.positionid,
+                },
+            )
+            return
+        for request in requests:  # Try until we succeed or run out of requests
+            try:
+                request.cancel_for(position)
+                break
+            except Exception as e:
+                order.log_action(
+                    "pretix_swap.cancelation.cancelation_failed",
+                    data={"detail": str(e)},
+                )

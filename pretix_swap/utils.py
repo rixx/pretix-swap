@@ -21,6 +21,21 @@ def get_swappable_items(item, groups=None):
     return result
 
 
+def get_cancelable_items(item, groups=None):
+    from .models import SwapGroup
+
+    groups = groups or item.event.swap_groups.filter(
+        swap_type=SwapGroup.Types.CANCELATION
+    ).prefetch_related("left", "right")
+    result = set()
+    for group in groups:
+        if item in group.left.all():
+            result |= set(group.right.all())
+        elif item in group.right.all():
+            result |= set(group.left.all())
+    return result
+
+
 def match_open_swap_requests(event):
     """Can be used in admin actions and runperiodic.
 

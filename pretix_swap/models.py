@@ -74,13 +74,13 @@ class SwapRequest(models.Model):
     position = models.ForeignKey(
         "pretixbase.OrderPosition", related_name="swap_states", on_delete=models.CASCADE
     )
-    target_item = models.ForeignKey(
+    target_item = models.ForeignKey(  # Used on free (unspecific) swap requests
         "pretixbase.Item",
         related_name="+",
         on_delete=models.CASCADE,
         null=True,
     )
-    partner = models.ForeignKey(
+    partner = models.ForeignKey(  # Only set on completed swaps
         "self",
         related_name="+",
         on_delete=models.SET_NULL,
@@ -145,12 +145,7 @@ class SwapRequest(models.Model):
         other_change_manager = OrderChangeManager(order=other.position.order)
 
         # Make sure AGAIN that the state is alright, because timings
-        if (
-            not self.state == self.States.REQUESTED
-            and other.state == self.States.REQUESTED
-            and not self.partner
-            and not other.partner
-        ):
+        if self.state != self.States.REQUESTED or other.state != self.States.REQUESTED:
             raise Exception("Both requests have to be in the 'requesting' state.")
         if not self.position.price == other.position.price:
             raise Exception("Both requests have to have the same price.")
@@ -214,15 +209,30 @@ class SwapRequest(models.Model):
             self.swap_with(other)
 
     def cancel_for(self, other):
-        # TODO the actual cancel method
-        # Log what is happening
-        # Do the thing
-        # Send notification
-        # Set state to complete
-        # Make sure AGAIN that the state is alright, because timings
-        pass
+        """ Called when an oder is marked as paid. """
 
-    def attempt_cancelation(self):
-        # TODO attempt to find a cancelation target
-        if self.swap_method != self.Methods.FREE:
-            return
+        if not self.event.settings.cancel_orderpositions:
+            raise Exception("Order position canceling is currently not allowed")
+
+        # TODO maybe notify=False, our own notification
+        change_manager = OrderChangeManager(order=self.position.order)
+
+        # Make sure AGAIN that the state is alright, because timings
+        if not self.state == self.States.REQUESTED:
+            raise Exception("Not in 'requesting' state.")
+        if self.position.price > other.price:
+            raise Exception("Cannot cancel for a cheaper product.")
+        change_manager.cancel(position=self.position)
+        change_manager.commit()
+        self.state = self.States.COMPLETED
+        self.save()
+        self.position.order.log_action(
+            "pretix_swap.cancelation.complete",
+            data={
+                "position": self.position.pk,
+                "positionid": self.position.positionid,
+                "other_position": other.pk,
+                "other_positionid": other.positionid,
+                "other_order": other.order.code,
+            },
+        )

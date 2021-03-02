@@ -28,7 +28,8 @@
                 <table class="table table-condensed table-hover">
                     <thead>
                     <tr>
-                        <th>{% trans "Swap group" %}</th>
+                        <th>{% trans "Name" %}</th>
+                        <th>{% trans "Type" %}</th>
                         <th>{% trans "Group A" %}</th>
                         <th>{% trans "Group B" %}</th>
                         <th></th>
@@ -41,6 +42,15 @@
                             <a href="{% url "plugins:pretix_swap:settings.detail" organizer=request.organizer.slug event=request.event.slug pk=sg.pk %}">
                                 {{ sg.name }}
                             </a>
+                        </td>
+                        <td>
+                            {% if sg.swap_type == "s" %}
+                                <i class="fa fa-random"></i>
+                                {% trans "Swap group" %}
+                            {% else %}
+                                <i class="fa fa-times-circle"></i>
+                                {% trans "Cancelation group" %}
+                            {% endif %}
                         </td>
                         <td>
                             {% for item in sg.left.all %}

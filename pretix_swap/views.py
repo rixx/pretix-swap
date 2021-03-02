@@ -73,7 +73,13 @@ class SwapStats(EventPermissionRequiredMixin, FormView):
             )  # Oldest first
             orders_approved += self.approve_orders(positions, to_approve)
 
-        messages.success(self.request, _("Approved {orders_approved} orders."))
+        messages.success(
+            self.request,
+            str(_("Approved {orders_approved} orders.")).format(
+                orders_approved=orders_approved
+            ),
+        )
+        return super().form_valid(form)
 
     def approve_orders(self, positions, count):
         """WARNING DANGER ATTENTION
@@ -187,8 +193,10 @@ class SwapSettings(EventSettingsViewMixin, EventSettingsFormView):
 
     def get_context_data(self, *args, **kwargs):
         ctx = super().get_context_data(*args, **kwargs)
-        ctx["swap_groups"] = self.request.event.swap_groups.all().prefetch_related(
-            "left", "right"
+        ctx["swap_groups"] = (
+            self.request.event.swap_groups.all()
+            .prefetch_related("left", "right")
+            .order_by("swap_type")
         )
         return ctx
 
