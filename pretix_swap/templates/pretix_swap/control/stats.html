@@ -10,40 +10,53 @@
 
     <h2>{% trans "Requests by product" %}</h2>
     {% trans "This table shows the <b>open</b> requests with no match (paid or unpaid)." %}{#TODO words #}
-    <div class="table-responsive">
-        <table class="table table-hover table-quotas">
-            <thead>
-            <tr>
-                <th></th>
-                <th class="text-right">{% trans "Swap requests" %}</th>
-                <th class="text-right">{% trans "Available in qutoa" %}</th>
-                <th class="text-right">{% trans "Pending orders" %}</th>
-                <th class="text-right">{% trans "Cancelation requests" %}</th>
-                <th class="text-right">{% trans "Approve pending orders" %}</th>
-            </tr>
-            </thead>
-            <tbody>
-                {% for product in by_products %}
+    <form method="post">
+        {% csrf_token %}
+        <div class="table-responsive">
+            <table class="table table-hover table-quotas">
+                <thead>
                 <tr>
-                    <th>
-                        <a href="{% eventurl request.event "control:event.item" organizer=request.organizer.slug event=request.event.slug item=product.item.id %}">
-                        {{ product.item }}
-                        </a>
-                    </th>
-                    <td class="text-right">{{ product.open_swap_requests }}</td>
-                    <td class="text-right">{{ product.available_in_quota }}</td>
-                    <td class="text-right">{{ product.pending_orders }}</td>
-                    <td class="text-right">{{ product.open_cancelation_requests }}</td>
-                    <td class="text-right">
-                        {% if product.form_field %}{% bootstrap_field product.form_field layout="inline" %}{% endif %}
-                    </td>
+                    <th></th>
+                    <th class="text-right">{% trans "Swap requests" %}</th>
+                    <th class="text-right">{% trans "Available in qutoa" %}</th>
+                    <th class="text-right">{% trans "Orders waiting for approval" %}</th>
+                    <th class="text-right">{% trans "Orders waiting for payment" %}</th>
+                    <th class="text-right">{% trans "Cancelation requests" %}</th>
+                    <th class="text-right">{% trans "Approve orders" %}</th>
                 </tr>
-                {% empty %}
-                <tr><td>{% trans "There are currently no open requests." %}</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+                </thead>
+                <tbody>
+                    {% for product in by_products %}
+                    <tr>
+                        <th>
+                            <a href="{% eventurl request.event "control:event.item" organizer=request.organizer.slug event=request.event.slug item=product.item.id %}">
+                            {{ product.item }}
+                            </a>
+                        </th>
+                        <td class="text-right">{{ product.open_swap_requests }}</td>
+                        <td class="text-right">{{ product.available_in_quota }}</td>
+                        <td class="text-right">{{ product.approval_orders }}</td>
+                        <td class="text-right">{{ product.pending_orders }}</td>
+                        <td class="text-right">{{ product.open_cancelation_requests }}</td>
+                        <td class="text-right">
+                            {% if product.form_field %}{% bootstrap_field product.form_field layout="inline" %}{% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td>{% trans "There are currently no open requests." %}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="form-group submit-group">
+            <button type="submit" class="btn btn-primary btn-save">
+                {% trans "Approve orders" %}
+            </button>
+        </div>
+    </form>
+    <p></p>
+    <hr>
+    <p></p>
     <h2>{% trans "Requests by state" %}</h2>
     <div class="table-responsive">
         <table class="table table-hover table-quotas">

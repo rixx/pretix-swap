@@ -40,6 +40,13 @@ def generate_swap_code():
     )
 
 
+class SwapApproval(models.Model):
+    position = models.OneToOneField(
+        "pretixbase.Order", related_name="swap_approval", on_delete=models.CASCADE
+    )
+    approved_for_cancelation_request = models.BooleanField(default=True)
+
+
 class SwapRequest(models.Model):
     class States(models.TextChoices):
         REQUESTED = "r"

@@ -159,6 +159,10 @@ def swap_logentry_display(sender, logentry, *args, **kwargs):
             other_id=logentry.parsed_data["other_positionid"],
             order=logentry.parsed_data["other_order"],
         )
+    if logentry.action_type == "pretix_swap.cancelation.approve_failed":
+        return str(_("Approval failed with error message: {e}")).format(
+            e=logentry.parsed_data["detail"]
+        )
 
 
 @receiver(logentry_object_link, dispatch_uid="swap_logentries_link")

@@ -316,4 +316,5 @@ class CancelationForm(forms.Form):
             self.fields[f"item_{item['item'].pk}"] = forms.IntegerField(
                 min_value=0,
                 required=False,
+                label="",
             )

@@ -14,6 +14,7 @@ from django.views.generic import (
 )
 from pretix.base.models.event import Event
 from pretix.base.models.orders import OrderPosition
+from pretix.base.services.orders import OrderError, approve_order
 from pretix.control.permissions import EventPermissionRequiredMixin
 from pretix.control.views.event import EventSettingsFormView, EventSettingsViewMixin
 from pretix.multidomain.urlreverse import eventreverse
@@ -21,7 +22,7 @@ from pretix.presale.views import EventViewMixin
 from pretix.presale.views.order import OrderDetailMixin
 
 from .forms import CancelationForm, SwapGroupForm, SwapRequestForm, SwapSettingsForm
-from .models import SwapGroup, SwapRequest
+from .models import SwapApproval, SwapGroup, SwapRequest
 
 
 class SwapStats(EventPermissionRequiredMixin, FormView):
@@ -44,6 +45,60 @@ class SwapStats(EventPermissionRequiredMixin, FormView):
         result["items"] = self.requests_by_product
         return result
 
+    def get_success_url(self):
+        return reverse(
+            "plugins:pretix_swap:stats",
+            kwargs={
+                "organizer": self.request.event.organizer.slug,
+                "event": self.request.event.slug,
+            },
+        )
+
+    @transaction.atomic
+    def form_valid(self, form):
+        orders_approved = 0
+        data = form.cleaned_data
+        for row in self.requests_by_product:
+            approvable = row["approval_orders"]
+            to_approve = data.get(f"item_{row['item'].pk}")
+            if not approvable or not to_approve:
+                continue
+            positions = OrderPosition.objects.filter(
+                order__status="n",  # Pending orders with and without approval
+                order__event=self.request.event,
+                order__require_approval=True,
+                item=row["item"],
+            ).order_by(
+                "order__datetime"
+            )  # Oldest first
+            orders_approved += self.approve_orders(positions, to_approve)
+
+        messages.success(self.request, _("Approved {orders_approved} orders."))
+
+    def approve_orders(self, positions, count):
+        """WARNING DANGER ATTENTION
+        This only works when there is only one orderposition per order!!!"""
+        # TODO cancelation for other order
+        approved = 0
+        for position in positions:
+            if approved >= count:
+                break
+            try:
+                approve_order(
+                    position.order,
+                    user=self.request.user,
+                    send_mail=True,
+                )
+                SwapApproval.objects.create(order=position.order)
+                approved += 1
+            except OrderError as e:
+                position.order.log_action(
+                    "pretix_swap.cancelation.approve_failed",
+                    data={"detail": str(e)},
+                    user=self.request.user,
+                )
+        return approved
+
     @cached_property
     def requests_by_product(self):
         requests = SwapRequest.objects.filter(
@@ -51,9 +106,13 @@ class SwapStats(EventPermissionRequiredMixin, FormView):
             state=SwapRequest.States.REQUESTED,
             partner__isnull=True,
         ).select_related("position", "position__item")
-        items = list(set(requests.values_list("position__item", flat=True)))
         positions = OrderPosition.objects.filter(
-            order__event=self.request.event, order__require_approval=True
+            order__status="n",  # Pending orders with and without approval
+            order__event=self.request.event,
+        )
+        items = list(
+            set(requests.values_list("position__item", flat=True))
+            | set(positions.values_list("item", flat=True))
         )
         result = []
         for item in items:
@@ -71,9 +130,15 @@ class SwapStats(EventPermissionRequiredMixin, FormView):
                         swap_type=SwapRequest.Types.SWAP
                     ).count(),
                     "open_cancelation_requests": requests.filter(
-                        swap_type=SwapRequest.Types.CANCELATION
+                        swap_type=SwapRequest.Types.CANCELATION,
+                        position__item=item,
                     ).count(),
-                    "pending_orders": positions.filter(item=item).count(),
+                    "approval_orders": positions.filter(
+                        item=item, order__require_approval=True
+                    ).count(),
+                    "pending_orders": positions.filter(
+                        item=item, order__require_approval=False
+                    ).count(),
                 }
             )
         return result
