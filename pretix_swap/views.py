@@ -1,5 +1,6 @@
 from django.contrib import messages
 from django.db import transaction
+from django.db.models import Count
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
@@ -63,14 +64,19 @@ class SwapStats(EventPermissionRequiredMixin, FormView):
             to_approve = data.get(f"item_{row['item'].pk}")
             if not approvable or not to_approve:
                 continue
-            positions = OrderPosition.objects.filter(
-                order__status="n",  # Pending orders with and without approval
-                order__event=self.request.event,
-                order__require_approval=True,
-                item=row["item"],
-            ).order_by(
-                "order__datetime"
-            )  # Oldest first
+            positions = (
+                OrderPosition.objects.filter(
+                    order__status="n",  # Pending orders with and without approval
+                    order__event=self.request.event,
+                    order__require_approval=True,
+                    item=row["item"],
+                )
+                .annotate(has_request=Count("order__cancelation_request"))
+                .order_by(
+                    "-has_request",
+                    "order__datetime",
+                )
+            )  # Ones with matching requests first, then oldest
             orders_approved += self.approve_orders(positions, to_approve)
 
         messages.success(
@@ -84,7 +90,6 @@ class SwapStats(EventPermissionRequiredMixin, FormView):
     def approve_orders(self, positions, count):
         """WARNING DANGER ATTENTION This only works when there is only one
         orderposition per order!!!"""
-        # TODO cancelation for other order
         approved = 0
         for position in positions:
             if approved >= count:
@@ -111,6 +116,7 @@ class SwapStats(EventPermissionRequiredMixin, FormView):
             position__order__event=self.request.event,
             state=SwapRequest.States.REQUESTED,
             partner__isnull=True,
+            position__order__status="p",  # Should already be the case, but hey
         ).select_related("position", "position__item")
         positions = OrderPosition.objects.filter(
             order__status="n",  # Pending orders with and without approval
@@ -326,6 +332,7 @@ class SwapCancel(EventViewMixin, OrderDetailMixin, TemplateView):
             position__order=self.order,
             pk=self.kwargs["pk"],
             state=SwapRequest.States.REQUESTED,
+            position__order__status="p",
         )
 
     def get_context_data(self, *args, **kwargs):

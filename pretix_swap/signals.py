@@ -255,13 +255,29 @@ def swap_order_paid(order, sender, *args, **kwargs):
         ]
         # First, check if there are specific cancelation request, if
         # if not order.event.settings.cancel_orderpositions_specific:
-        # TODO specific cancelation
+        specific_request = SwapRequest.objects.filter(
+            state=SwapRequest.States.REQUESTED,
+            swap_type=SwapRequest.Types.CANCELATION,
+            swap_method=SwapRequest.Methods.SPECIFIC,
+            target_order=order,
+            position__order__status="p",
+        ).first()
+        if specific_request:
+            try:
+                specific_request.cancel_for(position)
+                continue
+            except Exception as e:
+                order.log_action(
+                    "pretix_swap.cancelation.cancelation_failed",
+                    data={"detail": str(e)},
+                )
         # Next go through the oldest cancelation requests that are compatible
         requests = SwapRequest.objects.filter(
             state=SwapRequest.States.REQUESTED,
             swap_type=SwapRequest.Types.CANCELATION,
             swap_method=SwapRequest.Methods.FREE,
             position__item__in=items,
+            position__order__status="p",
         )
         if not requests:
             order.log_action(

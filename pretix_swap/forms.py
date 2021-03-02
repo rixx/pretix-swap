@@ -268,7 +268,7 @@ class SwapRequestForm(forms.Form):
                 data={
                     "other_order": instance.position.order.code,
                     "other_position": instance.position.id,
-                    "other_positionid": instance.positionid,
+                    "other_positionid": instance.position.positionid,
                 },
             )
         return instance
