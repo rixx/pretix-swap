@@ -20,21 +20,32 @@ from pretix.multidomain.urlreverse import eventreverse
 from pretix.presale.views import EventViewMixin
 from pretix.presale.views.order import OrderDetailMixin
 
-from .forms import SwapGroupForm, SwapRequestForm, SwapSettingsForm
+from .forms import CancelationForm, SwapGroupForm, SwapRequestForm, SwapSettingsForm
 from .models import SwapGroup, SwapRequest
 
 
-class SwapStats(EventPermissionRequiredMixin, TemplateView):
+class SwapStats(EventPermissionRequiredMixin, FormView):
     permission = "can_change_event_settings"
     template_name = "pretix_swap/control/stats.html"
+    form_class = CancelationForm
 
     def get_context_data(self, *args, **kwargs):
         ctx = super().get_context_data(*args, **kwargs)
         ctx["by_state"] = self._get_requests_by_state()
-        ctx["by_products"] = self._get_requests_by_product()
+        products = self.requests_by_product
+        form = ctx["form"]
+        for line in products:
+            line["form_field"] = form[f"item_{line['item'].pk}"]
+        ctx["by_products"] = products
         return ctx
 
-    def _get_requests_by_product(self):
+    def get_form_kwargs(self):
+        result = super().get_form_kwargs()
+        result["items"] = self.requests_by_product
+        return result
+
+    @cached_property
+    def requests_by_product(self):
         requests = SwapRequest.objects.filter(
             position__order__event=self.request.event,
             state=SwapRequest.States.REQUESTED,
@@ -44,19 +55,28 @@ class SwapStats(EventPermissionRequiredMixin, TemplateView):
         positions = OrderPosition.objects.filter(
             order__event=self.request.event, order__require_approval=True
         )
-        return [
-            {
-                "item": self.request.event.items.get(pk=item),
-                "open_swap_requests": requests.filter(
-                    swap_type=SwapRequest.Types.SWAP
-                ).count(),
-                "open_cancelation_requests": requests.filter(
-                    swap_type=SwapRequest.Types.CANCELATION
-                ).count(),
-                "pending_orders": positions.filter(item=item).count(),
-            }
-            for item in items
-        ]
+        result = []
+        for item in items:
+            item = self.request.event.items.get(pk=item)
+            availability = item.check_quotas()
+            if not availability[1] and availability[0] == 100:
+                availability = "∞"
+            else:
+                availability = availability[1]
+            result.append(
+                {
+                    "item": item,
+                    "available_in_quota": availability,
+                    "open_swap_requests": requests.filter(
+                        swap_type=SwapRequest.Types.SWAP
+                    ).count(),
+                    "open_cancelation_requests": requests.filter(
+                        swap_type=SwapRequest.Types.CANCELATION
+                    ).count(),
+                    "pending_orders": positions.filter(item=item).count(),
+                }
+            )
+        return result
 
     def _get_requests_by_state(self):
         requests = SwapRequest.objects.filter(position__order__event=self.request.event)

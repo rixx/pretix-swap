@@ -1,5 +1,6 @@
 {% extends "pretixcontrol/event/base.html" %}
 {% load i18n %}
+{% load bootstrap3 %}
 {% load eventurl %}
 
 {% block title %}{% trans "Swap Request Statistics" %}{% endblock %}
@@ -15,9 +16,10 @@
             <tr>
                 <th></th>
                 <th class="text-right">{% trans "Swap requests" %}</th>
-                <th class="text-right">{% trans "Cancelation requests" %}</th>
+                <th class="text-right">{% trans "Available in qutoa" %}</th>
                 <th class="text-right">{% trans "Pending orders" %}</th>
-                <th></th>
+                <th class="text-right">{% trans "Cancelation requests" %}</th>
+                <th class="text-right">{% trans "Approve pending orders" %}</th>
             </tr>
             </thead>
             <tbody>
@@ -29,9 +31,12 @@
                         </a>
                     </th>
                     <td class="text-right">{{ product.open_swap_requests }}</td>
-                    <td class="text-right">{{ product.open_cancelation_requests }}</td>
+                    <td class="text-right">{{ product.available_in_quota }}</td>
                     <td class="text-right">{{ product.pending_orders }}</td>
-                    <td class="text-right"></td>
+                    <td class="text-right">{{ product.open_cancelation_requests }}</td>
+                    <td class="text-right">
+                        {% if product.form_field %}{% bootstrap_field product.form_field layout="inline" %}{% endif %}
+                    </td>
                 </tr>
                 {% empty %}
                 <tr><td>{% trans "There are currently no open requests." %}</td></tr>

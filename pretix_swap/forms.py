@@ -305,3 +305,15 @@ class SwapRequestForm(forms.Form):
 
         # TODO find cart or … something? help?
         return data
+
+
+class CancelationForm(forms.Form):
+    def __init__(self, *args, items=None, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.items = items
+        for item in items:
+            self.fields[f"item_{item['item'].pk}"] = forms.IntegerField(
+                min_value=0,
+                required=False,
+            )
