@@ -82,8 +82,8 @@ class SwapStats(EventPermissionRequiredMixin, FormView):
         return super().form_valid(form)
 
     def approve_orders(self, positions, count):
-        """WARNING DANGER ATTENTION
-        This only works when there is only one orderposition per order!!!"""
+        """WARNING DANGER ATTENTION This only works when there is only one
+        orderposition per order!!!"""
         # TODO cancelation for other order
         approved = 0
         for position in positions:

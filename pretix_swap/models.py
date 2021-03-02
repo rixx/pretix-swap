@@ -209,7 +209,7 @@ class SwapRequest(models.Model):
             self.swap_with(other)
 
     def cancel_for(self, other):
-        """ Called when an oder is marked as paid. """
+        """Called when an oder is marked as paid."""
 
         if not self.event.settings.cancel_orderpositions:
             raise Exception("Order position canceling is currently not allowed")

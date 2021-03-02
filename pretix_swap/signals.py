@@ -109,13 +109,22 @@ def notifications_order_info_top(sender, request, order, **kwargs):
 
 @receiver(order_info, dispatch_uid="swap_order_info")
 def order_info_bottom(sender, request, order, **kwargs):
+    event = request.event
+
     if not order.status == "p":
-        return
+        if order.status != "n" or not order.require_approval:
+            return
+        if not (
+            event.settings.cancel_orderpositions
+            and event.settings.cancel_orderpositions_specific
+        ):
+            return
+        template = get_template("pretix_swap/presale/require_approval_box.html")
+        return template.render({"secret": order.code})
 
     from .models import SwapRequest
     from .utils import get_applicable_items
 
-    event = request.event
     items = get_applicable_items(event)
 
     states = SwapRequest.objects.filter(position__order=order).order_by(
