@@ -7,12 +7,49 @@
 
 {% block inside %}
     <h1>{% trans "Swap Configuration" %}</h1>
+    {% if warn_multiple_items %}
+    <div class="alert alert-danger">
+        {% blocktrans trimmed %}
+        You currently allow more than <b>one item per order</b>.
+        Please note that <b>cancelations will not work</b> correctly with this configuration.
+        You can change this in your cart settings.
+        {% endblocktrans %}
+    </div>
+    {% endif %}
+    {% if warn_no_swap_groups %}
+    <div class="alert alert-warning">
+        {% blocktrans trimmed %}
+        You have set swaps to be allowed, but haven't configured any swap groups.
+        No swaps will be offered to users.
+        {% endblocktrans %}
+    </div>
+    {% endif %}
+    {% if warn_no_cancel_groups %}
+    <div class="alert alert-warning">
+        {% blocktrans trimmed %}
+        You have set cancelations to be allowed, but haven't configured any cancel groups.
+        No cancelations will be offered to users.
+        {% endblocktrans %}
+    </div>
+    {% endif %}
     <form action="" method="post" class="form-horizontal">
         {% csrf_token %}
         {% bootstrap_form_errors form %}
         <div class="tabbed-form">
             <fieldset>
                 <legend>{% trans "Settings" %}</legend>
+                <div class="alert alert-info">
+                {% blocktrans trimmed %}
+                <p>You can allow users two ways of getting rid of a ticket that they don't want anymore:</p>
+                <p>You can allow them to <b>swap</b> the ticket with somebody else. You can configure the products that can be swapped with one another with swap groups.
+                Currently, only products of the same price can be swapped with each other.
+                Swaps will be performed <b>automatically</b> whenever matching swap requests are found.</p>
+                <p>You can also allow them to <b>request to cancel</b> a ticket.
+                You have to <b>trigger</b> pending cancelations manually in the "Swap overview" page.
+                Cancelations only take place when there is an unapproved order that is part of a matching cancelation group.
+                Cancelations are only permitted if the unapproved order has the <b>same price or is more expensive</b> than the order about to be canceled.</p>
+                {% endblocktrans %}
+                </div>
                 {% bootstrap_field form.swap_orderpositions layout="control" %}
                 {% bootstrap_field form.swap_orderpositions_specific layout="control" %}
                 {% bootstrap_field form.cancel_orderpositions layout="control" %}

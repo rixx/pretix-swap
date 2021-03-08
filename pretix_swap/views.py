@@ -212,6 +212,15 @@ class SwapSettings(EventSettingsViewMixin, EventSettingsFormView):
             .prefetch_related("left", "right")
             .order_by("swap_type")
         )
+        swap_groups = ctx["swap_groups"].filter(swap_type="s")
+        cancel_groups = ctx["swap_groups"].filter(swap_type="c")
+        ctx["warn_multiple_items"] = self.request.event.settings.max_items_per_order > 1
+        ctx["warn_no_swap_groups"] = (
+            self.request.event.settings.swap_orderpositions and not swap_groups
+        )
+        ctx["warn_no_cancel_groups"] = (
+            self.request.event.settings.cancel_orderpositions and not cancel_groups
+        )
         return ctx
 
     def get_success_url(self, **kwargs):

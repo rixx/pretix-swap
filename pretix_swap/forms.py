@@ -13,20 +13,34 @@ from .utils import get_applicable_items, get_cancelable_items, get_swappable_ite
 
 class SwapSettingsForm(SettingsForm):
     swap_orderpositions = forms.BooleanField(
-        label=_("Allow customers to swap order positions"), required=False
+        label=_("Allow customers to swap order positions"),
+        required=False,
+        help_text=_(
+            "Products included in a swap group will be available for swap requests. Swaps will be performed automatically."
+        ),
     )
     swap_orderpositions_specific = forms.BooleanField(
         label=_("Allow customers to swap with a specific other order position"),
         required=False,
+        help_text=_(
+            "Users can enter a code to swap their ticket with somebody specific."
+        ),
     )
     cancel_orderpositions = forms.BooleanField(
-        label=_("Allow customers to request to cancel orderpositions"), required=False
+        label=_("Allow customers to request to cancel orderpositions"),
+        required=False,
+        help_text=_(
+            "Products included in a cancel group will be available for cancelation requests. Cancelations will be performed only when you trigger them."
+        ),
     )
     cancel_orderpositions_specific = forms.BooleanField(
         label=_(
             "Allow customers to request to cancel orderpositions for a specific waiting list entry"
         ),
         required=False,
+        help_text=_(
+            "Users can enter a code to hand their ticket to somebody specific."
+        ),
     )
 
     def __init__(self, *args, **kwargs):
@@ -174,6 +188,7 @@ class SwapRequestForm(forms.Form):
             initial=swap_actions[0],
             choices=swap_actions,
             label=_("What do you want to do?"),
+            required=True,
         )
         if (
             any(SwapRequest.Types.SWAP == action[0] for action in swap_actions)

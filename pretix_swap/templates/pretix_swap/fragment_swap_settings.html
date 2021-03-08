@@ -19,7 +19,13 @@
             </div>
         </div>
         <div class="help-block">
-            {% trans "All items selected on the left side can be swapped with all items selected on the right side." %}
+            <p>
+            {% trans "For swap groups: All items selected on the left side can be swapped with all items selected on the right side." %}
+            {% trans "To keep things manageable, you may want to have only one item on the left side and all the items it can be swapped against on the right side." %}
+            </p>
+            <p>
+            {% trans "For cancel groups: All items selected on the left side can be canceled in favour of all items selected on the right side <b>and vice versa</b>." %}
+            </p>
             {% if form.left.errors %}
                 <br>{{ form.left.errors }}
             {% endif %}
