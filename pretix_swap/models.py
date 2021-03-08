@@ -167,12 +167,26 @@ class SwapRequest(models.Model):
             raise Exception("Both requests have to have the same price.")
         if self.target_item and other.position.item != self.target_item:
             raise Exception("Incompatible item!")
-        my_change_manager.change_item(
-            position=self.position, item=other_item, variation=other_variation
-        )
-        other_change_manager.change_item(
-            position=other.position, item=my_item, variation=my_variation
-        )
+        if self.position.subevent == other.position.subevent:
+            my_change_manager.change_item(
+                position=self.position, item=other_item, variation=other_variation
+            )
+            other_change_manager.change_item(
+                position=other.position, item=my_item, variation=my_variation
+            )
+        else:
+            my_change_manager.change_item_and_subevent(
+                position=self.position,
+                item=other_item,
+                variation=other_variation,
+                subevent=other.position.subevent,
+            )
+            other_change_manager.change_item(
+                position=other.position,
+                item=my_item,
+                variation=my_variation,
+                subevent=self.position.subevent,
+            )
         my_change_manager.commit()
         other_change_manager.commit()
         self.state = self.States.COMPLETED
