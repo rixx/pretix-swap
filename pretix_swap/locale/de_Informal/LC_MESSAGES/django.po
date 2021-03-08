@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-03-07 19:01+0100\n"
+"POT-Creation-Date: 2021-03-09 00:14+0100\n"
 "PO-Revision-Date: \n"
 "Last-Translator: Tobias Kunze\n"
 "Language-Team: \n"
@@ -10,3 +10,793 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 2.4.1\n"
+
+#: pretix_swap/__init__.py:16
+msgid "Swap tickets with other attendees"
+msgstr "Tickets mit anderen Teilnehmer*innen tauschen"
+
+#: pretix_swap/__init__.py:19
+msgid ""
+"Swap tickets, anonymously or with specific other attendees. Also supports "
+"canceling tickets if (and only if) another ticket is purchased."
+msgstr ""
+"Tickets austauschen, entweder anonym, oder mit bestimmten Teilnehmer*innen. "
+"Unterstützt auch das stornieren/weitergeben von Tickets, wenn dafür vorher "
+"ein anderes Ticket gekauft wird."
+
+#: pretix_swap/forms.py:16
+msgid "Allow customers to swap order positions"
+msgstr "Kund*innen erlauben, Tickets zu tauschen"
+
+#: pretix_swap/forms.py:19
+msgid ""
+"Products included in a swap group will be available for swap requests. Swaps "
+"will be performed automatically."
+msgstr ""
+"Produkte in einer Tauschgruppe stehen für Tauschanfragen zur Verfügung. Der "
+"Tausch wird automatisch durchgeführt."
+
+#: pretix_swap/forms.py:23
+msgid "Allow customers to swap with a specific other order position"
+msgstr "Kund*innen erlauben, mit einem bestimmten anderen Ticket zu tauschen"
+
+#: pretix_swap/forms.py:26
+msgid "Users can enter a code to swap their ticket with somebody specific."
+msgstr ""
+"Kund*innen können einen Code eingeben, um ihr Ticket mit einer bestimmten "
+"Person zu tauschen."
+
+#: pretix_swap/forms.py:30
+msgid "Allow customers to request to cancel orderpositions"
+msgstr "Kund*innen erlauben, Storno-Anfragen zu stellen"
+
+#: pretix_swap/forms.py:33
+msgid ""
+"Products included in a cancel group will be available for cancelation "
+"requests. Cancelations will be performed only when you trigger them."
+msgstr ""
+"Produkte in einer Stornogruppe stehen für Stornoanfragen zur Verfügung. "
+"Stornos werden nur durchgeführt, wenn Du sie anstößt."
+
+#: pretix_swap/forms.py:38
+msgid ""
+"Allow customers to request to cancel orderpositions for a specific waiting "
+"list entry"
+msgstr ""
+"Kund*innen erlauben, ihre Stornoanfragen zugunsten einer bestimmten "
+"wartenden Bestellung zu stellen."
+
+#: pretix_swap/forms.py:42
+msgid "Users can enter a code to hand their ticket to somebody specific."
+msgstr ""
+"Kund*innen können einen Code eingeben, um ihr Ticket an eine bestimmte "
+"Person weiterzugeben."
+
+#: pretix_swap/forms.py:81
+msgid "Please select at least one item!"
+msgstr "Bitte wähle mindestens ein Produkt aus!"
+
+#: pretix_swap/forms.py:88
+msgid "Please select at least one item on the right side!"
+msgstr ""
+
+#: pretix_swap/forms.py:103
+msgid "You can only swap elements with the same price!"
+msgstr "Du kannst nur Produkte mit demselben Preis zum Tausch zulassen!"
+
+#: pretix_swap/forms.py:109
+msgid ""
+"Your products include elements with different prices. Please note that "
+"cancelations will only be allowed when the new product has at least the same "
+"price as the canceled one, so that you will not lose money."
+msgstr ""
+"Die Produktliste enthält Produkte mit unterschiedlichen Preisen. Bitte "
+"beachte, dass Stornos nur erlaubt werden, wenn das neue Produkt mindestens "
+"denselben Preis hat wie das stornierte, sodass du kein Geld verlierst."
+
+#: pretix_swap/forms.py:157
+msgid "Which item do you want to change?"
+msgstr "Welche Bestellposition möchtest du ändern?"
+
+#: pretix_swap/forms.py:164
+msgid "Which product do you want instead?"
+msgstr "Welches Ticket möchtest du stattdessen?"
+
+#: pretix_swap/forms.py:174
+msgid "What do you want to do?"
+msgstr "Was möchtest du tun?"
+
+#: pretix_swap/forms.py:183
+msgid "Swap code"
+msgstr "Tauschcode"
+
+#: pretix_swap/forms.py:185
+msgid ""
+"Do you already know who you want to swap with? Enter their swap code here!"
+msgstr ""
+"Möchtest du mit einer bestimmten Person tauschen? Dann trag hier ihren "
+"Tauschcode ein!"
+
+#: pretix_swap/forms.py:189
+msgid "Swap method"
+msgstr "Tauschmethode"
+
+#: pretix_swap/forms.py:193
+msgid "Switch with the next interested person."
+msgstr "Mit der nächstbesten interessierten Person tauschen"
+
+#: pretix_swap/forms.py:197
+msgid "I want to switch with a specific person."
+msgstr "Mit einer bestimmten Person tauschen"
+
+#: pretix_swap/forms.py:207
+msgid "Cancel code"
+msgstr "Wartelistencode"
+
+#: pretix_swap/forms.py:209
+msgid ""
+"Do you already know who should take your place? Enter their waiting list "
+"code here!"
+msgstr ""
+"Möchtest du dein Ticket an eine bestimmte Person weiterreichen? Trag hier "
+"ihren Wartelistencode ein!"
+
+#: pretix_swap/forms.py:213
+msgid "Cancelation method"
+msgstr "Stornomethode"
+
+#: pretix_swap/forms.py:217 pretix_swap/models.py:68
+msgid "Give my place to the next person in line."
+msgstr "Gebt mein Ticket der nächsten interessierten Person."
+
+#: pretix_swap/forms.py:221
+msgid "I want my place to go to a specific person."
+msgstr "Gebt mein Ticket einer bestimmten Person."
+
+#: pretix_swap/forms.py:303
+msgid "Unknown swap code!"
+msgstr "Unbekannter Tauschcode!"
+
+#: pretix_swap/forms.py:310
+#, python-brace-format
+msgid ""
+"The swap code you entered is for the item '{other_item}', which is not "
+"compatible with your item '{your_item}'."
+msgstr ""
+"Der Tauschcode, den du eingetragen hast, gilt für das Produkt "
+"'{other_item}', das nicht mit deinem ('{your_item}') kompatibel ist."
+
+#: pretix_swap/forms.py:323
+msgid ""
+"If you want to give your ticket to somebody specific, please provide a "
+"cancelation code."
+msgstr ""
+"Wenn du dein Ticket jemandem bestimmten weitergeben möchtest, gib bitten "
+"einen Wartelistencode ein."
+
+#: pretix_swap/forms.py:329
+msgid "Unknown cancelation code."
+msgstr "Unbekannter Wartelistencode."
+
+#: pretix_swap/forms.py:340
+#, python-brace-format
+msgid ""
+"The cancelation code you entered is for the item '{other_item}', which is "
+"not compatible with your item '{your_item}'."
+msgstr ""
+"Der Wartelistencode, den du eingegeben hast, gilt für das Produkt "
+"'{other_item}', was nicht mit deinem ('{your_item}') kompatibel ist."
+
+#: pretix_swap/forms.py:353
+msgid "Somebody else has already requested to pass their ticket to this order."
+msgstr ""
+"Jemand anders hat sich schon gemeldet, um ein Ticket an diese Person "
+"weiterzugeben."
+
+#: pretix_swap/models.py:13
+msgid "Swap"
+msgstr "Tausch"
+
+#: pretix_swap/models.py:14
+msgid "Cancelation"
+msgstr "Storno"
+
+#: pretix_swap/models.py:21
+msgid "Group name"
+msgstr "Gruppenname"
+
+#: pretix_swap/models.py:24
+msgid "Group type"
+msgstr "Gruppentyp"
+
+#: pretix_swap/models.py:31
+msgid "Products"
+msgstr "Produkte"
+
+#: pretix_swap/models.py:33
+msgid ""
+"For swap groups: All products selected can be swapped with one another. For "
+"cancel groups: All products selected can be canceled in favour of one "
+"another, as long as the new product is as least as expensive as the old one."
+msgstr ""
+"Für Tauschgruppen: Alle Produkte in einer Gruppe können jeweils miteinander "
+"getauscht werden. Für Stornogruppen: Alle Produkte in einer Gruppe können "
+"füreinander storniert werden, solang das neue Produkt mindestens so teuer "
+"ist wie das alte."
+
+#: pretix_swap/models.py:69
+msgid "I know who to swap with."
+msgstr "Ich weiß, mit wem ich tauschen will."
+
+#: pretix_swap/models.py:79
+msgid "How do you want to handle the ticket?"
+msgstr "Was möchtest du mit dem Ticket tun?"
+
+#: pretix_swap/models.py:120
+msgid ""
+"You have requested to swap this prodcut. Please wait until somebody requests "
+"a matching swap."
+msgstr ""
+"Du hast angefragt, dieses Produkt zu tauschen. Bitte warte, bis sich ein "
+"passender Tauschpartner findet."
+
+#: pretix_swap/models.py:123
+msgid ""
+"You have requested to swap this product with somebody specific. Please wait "
+"until they enter the swap code that you have given them."
+msgstr ""
+"Du möchtest dieses Produkt mit jemand bestimmtem tauschen. Bitte warte, bis "
+"diese Person den Tauschcode eingibt, den du ihr gegeben hast."
+
+#: pretix_swap/models.py:126
+msgid "You have completed the swap of this product."
+msgstr "Du hast den Tausch dieses Produkts abgeschlossen."
+
+#: pretix_swap/models.py:129
+msgid "You have completed the swap of this product with your chosen partner."
+msgstr ""
+"Du hast den Tausch dieses Produkts mit deinem gewählten Tauschpartner "
+"abgeschlossen."
+
+#: pretix_swap/models.py:132
+msgid ""
+"You have requested to cancel this product. Please wait until somebody from "
+"the waiting list orders and pays a matching product."
+msgstr ""
+"Du hast angefragt, dieses Produkt zu stornieren. Bitte warte, bis jemand von "
+"der Warteliste ein passendes Produkt bestellt und bezahlt."
+
+#: pretix_swap/models.py:135
+msgid ""
+"You have requested to cancel this product and give your place to somebody "
+"else. Please wait until they have completed their registration."
+msgstr ""
+"Du hast angefragt, dieses Produkt zugunsten einer bestimmten Person zu "
+"stornieren. Bitte warte, bis diese Person ihre Bestellung abgeschlossen und "
+"bezahlt hat."
+
+#: pretix_swap/models.py:141
+msgid "You have completed the cancelation of this position."
+msgstr "Du hast dieses Produkt erfolgreich storniert."
+
+#: pretix_swap/models.py:143
+msgid ""
+"You have completed the cancelation of this position with your chosen partner."
+msgstr ""
+"Du hast dieses Produkt erfolgreich zugunsten deines gewählten Partners "
+"storniert."
+
+#: pretix_swap/signals.py:50
+msgid "Swap overview"
+msgstr "Tauschübersicht"
+
+#: pretix_swap/signals.py:79
+msgid "Please see below for information on your swap requests."
+msgstr "Siehe unten für weitere Informationen zu deiner Tauschanfrage."
+
+#: pretix_swap/signals.py:92
+msgid ""
+"You can currently request to swap or cancel some of your ordered products!"
+msgstr "Du kannst derzeit anfragen, Produkte zu tauschen oder zu stornieren."
+
+#: pretix_swap/signals.py:96
+msgid "You can currently request to swap some of your ordered products!"
+msgstr "Du kannst derzeit Tickets tauschen!"
+
+#: pretix_swap/signals.py:100
+msgid "You can currently request to cancel some of your ordered products!"
+msgstr "Du kannst derzeit eine Stornoanfrage starten."
+
+#: pretix_swap/signals.py:167
+msgid ""
+"The order was marked as paid and expected to match a cancelation request, "
+"but no matching cancelation request was found."
+msgstr ""
+"Die Bestellung wurde als bezahlt markiert und hätte einer Stornoanfrage "
+"zugeordnet werden sollen, aber es wurde keine passende Stornoanfrage "
+"gefunden!"
+
+#: pretix_swap/signals.py:174
+#, python-brace-format
+msgid "The request to swap position #{id} has been canceled."
+msgstr "Die Tauschanfrage für Position #{id} wurde zurückgezogen."
+
+#: pretix_swap/signals.py:180
+#, python-brace-format
+msgid "The user has requested to swap position #{id}."
+msgstr "Eine Tauschanfrage für Position #{id} wurde erstellt."
+
+#: pretix_swap/signals.py:184
+#, python-brace-format
+msgid "The user has requested to cancel position #{id}."
+msgstr "Eine Stornoanfrage für Position #{id} wurde erstellt."
+
+#: pretix_swap/signals.py:190
+#, python-brace-format
+msgid ""
+"Order position #{id} has been swapped with position #{other_id} of order "
+"{order}."
+msgstr ""
+"Bestellposition #{id} wurde getauscht mit Bestellposition #{other_id} der "
+"Bestellung {order}."
+
+#: pretix_swap/signals.py:200
+#, python-brace-format
+msgid ""
+"The order {order}#{position} has requested to cancel in favour of this order."
+msgstr ""
+"Bestellung {order}#{position} wurde zugunsten dieser Bestellung storniert."
+
+#: pretix_swap/signals.py:209
+#, python-brace-format
+msgid ""
+"Order position #{id} has been canceled after order {order} was marked as "
+"paid."
+msgstr ""
+"Bestellposition #{id} wurde storniert, nachdem Bestellung {order} als "
+"bezahlt markiert wurde."
+
+#: pretix_swap/signals.py:216 pretix_swap/signals.py:220
+#, python-brace-format
+msgid "Approval failed with error message: {e}"
+msgstr "Freigabe schlug fehl: {e}"
+
+#: pretix_swap/signals.py:228
+#, python-brace-format
+msgid "Order {val}#{position}"
+msgstr "Bestellung {val}#{position}"
+
+#: pretix_swap/templates/pretix_swap/control/create.html:5
+#: pretix_swap/templates/pretix_swap/control/create.html:8
+msgid "New swap group"
+msgstr "Neue Tauschgruppe"
+
+#: pretix_swap/templates/pretix_swap/control/create.html:14
+#: pretix_swap/templates/pretix_swap/control/edit.html:14
+#: pretix_swap/templates/pretix_swap/control/settings.html:57
+msgid "Save"
+msgstr "Speichern"
+
+#: pretix_swap/templates/pretix_swap/control/delete.html:5
+#: pretix_swap/templates/pretix_swap/control/delete.html:7
+msgid "Delete swap group"
+msgstr "Tauschgruppe löschen"
+
+#: pretix_swap/templates/pretix_swap/control/delete.html:10
+#, python-format
+msgid ""
+"Are you sure you want to delete the swap_group <strong>%(name)s</strong>?"
+msgstr ""
+"Bist du dir sicher, dass du die Tauschgruppe <strong>%(name)s</strong> "
+"löschen möchtest?"
+
+#: pretix_swap/templates/pretix_swap/control/delete.html:13
+msgid "Cancel"
+msgstr "Abbrechen"
+
+#: pretix_swap/templates/pretix_swap/control/delete.html:16
+msgid "Delete"
+msgstr "Löschen"
+
+#: pretix_swap/templates/pretix_swap/control/edit.html:5
+#: pretix_swap/templates/pretix_swap/control/edit.html:8
+msgid "Edit swap group"
+msgstr "Tauschgruppe bearbeiten"
+
+#: pretix_swap/templates/pretix_swap/control/settings.html:6
+#: pretix_swap/templates/pretix_swap/control/settings.html:9
+msgid "Swap Configuration"
+msgstr "Tausch-Einstellungen"
+
+#: pretix_swap/templates/pretix_swap/control/settings.html:12
+msgid ""
+"You currently allow more than <b>one item per order</b>. Please note that "
+"<b>cancelations will not work</b> correctly with this configuration. You can "
+"change this in your cart settings."
+msgstr ""
+"Es ist derzeit erlaubt, mehr als <b>ein Produkt pro Bestellung</b> zu haben. "
+"Bitte beachte, dass mit dieser Einstellung <b>Stornoanfragen nicht "
+"funktionieren</b> werden. Du kannst das in den Warenkorb-Einstellungen "
+"ändern."
+
+#: pretix_swap/templates/pretix_swap/control/settings.html:21
+msgid ""
+"You have set swaps to be allowed, but haven't configured any swap groups."
+msgstr ""
+"Du erlaubst derzeit den Tausch von Bestellungen, aber hast keine "
+"Tauschgruppen eingerichtet."
+
+#: pretix_swap/templates/pretix_swap/control/settings.html:28
+msgid ""
+"You have set cancelations to be allowed, but haven't configured any cancel "
+"groups."
+msgstr ""
+"Du erlaubst derzeit Stornoanfragen, aber hast keine Stornogruppen "
+"konfiguriert."
+
+#: pretix_swap/templates/pretix_swap/control/settings.html:38
+msgid "Settings"
+msgstr "Einstellungen"
+
+#: pretix_swap/templates/pretix_swap/control/settings.html:40
+msgid ""
+"<p>You can allow users two ways of getting rid of a ticket that they don't "
+"want anymore:</p> <p>You can allow them to <b>swap</b> the ticket with "
+"somebody else. You can configure the products that can be swapped with one "
+"another with swap groups. Currently, only products of the same price can be "
+"swapped with each other. Swaps will be performed <b>automatically</b> "
+"whenever matching swap requests are found.</p> <p>You can also allow them to "
+"<b>request to cancel</b> a ticket. You have to <b>trigger</b> pending "
+"cancelations manually in the \"Swap overview\" page. Cancelations only take "
+"place when there is an unapproved order that is part of a matching "
+"cancelation group. Cancelations are only permitted if the unapproved order "
+"has the <b>same price or is more expensive</b> than the order about to be "
+"canceled.</p>"
+msgstr ""
+"<p>Du kannst Kund*innen zwei Wege anbieten, ein ungewolltes Ticket "
+"loszuwerden:</p><p>Du kannst ihnen erlauben, das Ticket mit jemandem zu "
+"<b>tauschen</b>. Du kannst die Produkte, die dafür zur Verfügung stehen, in "
+"Tauschgruppen konfigurieren. Derzeit können nur Produkte mit gleichem Preis "
+"miteinander getauscht werden. Jeder Tausch wird <b>automatisch</b> "
+"durchgeführt, sobald passende Tauschanfragen gefunden werden.</p><p> Du "
+"kannst auch <b>Stornoanfragen</b> anbieten. Stornoanfragen müssen manuell in "
+"der Tauschübersicht <b>bewilligt</b> werden. Stornoanfragen können nur "
+"durchgeführt werden, wenn es passende Bestellungen gibt, die auf Freigabe "
+"warten. Stornoanfragen werden nur durchgeführt, wenn die neue Bestellung "
+"<b>gleich teuer oder teurer</b> ist als die vorherige Bestellung."
+
+#: pretix_swap/templates/pretix_swap/control/settings.html:62
+msgid "Swap Groups"
+msgstr "Tauschgruppen"
+
+#: pretix_swap/templates/pretix_swap/control/settings.html:66
+msgid "Name"
+msgstr "Name"
+
+#: pretix_swap/templates/pretix_swap/control/settings.html:67
+msgid "Type"
+msgstr "Art"
+
+#: pretix_swap/templates/pretix_swap/control/settings.html:68
+msgid "Items"
+msgstr "Produkte"
+
+#: pretix_swap/templates/pretix_swap/control/settings.html:83
+msgid "Swap group"
+msgstr "Tauschgruppe"
+
+#: pretix_swap/templates/pretix_swap/control/settings.html:86
+msgid "Cancelation group"
+msgstr "Stornogruppe"
+
+#: pretix_swap/templates/pretix_swap/control/settings.html:106
+msgid "No swap groups yet"
+msgstr "Es gibt noch keine Tauschgruppen"
+
+#: pretix_swap/templates/pretix_swap/control/settings.html:113
+msgid "New Swap Group"
+msgstr "Neue Tauschgruppe"
+
+#: pretix_swap/templates/pretix_swap/control/stats.html:6
+#: pretix_swap/templates/pretix_swap/control/stats.html:9
+msgid "Swap Request Statistics"
+msgstr "Tausch-Statistik"
+
+#: pretix_swap/templates/pretix_swap/control/stats.html:11
+msgid "Approve cancelations"
+msgstr "Stornoanfragen freigeben"
+
+#: pretix_swap/templates/pretix_swap/control/stats.html:14
+msgid ""
+"With this table, you can see how many users currently want to cancel their "
+"orders, and if there are matching orders waiting for approval. You can "
+"approve orders (as long as your quotas permit it)."
+msgstr ""
+"In dieser Tabelle kannst du sehen, wie viele Kund*innen derzeit ihre "
+"Bestellungen stornieren wollen, und ob es passende Bestellungen gibt, die "
+"auf Freigabe warten. Du kannst hier diese Bestellungen freigeben (solang ihr "
+"genug Kapazität habt)."
+
+#: pretix_swap/templates/pretix_swap/control/stats.html:20
+msgid ""
+"When you approve orders, the waiting customers are sent an email that their "
+"order is now <i>pending</i> and that they need to pay. Only once they have "
+"paid, a matching order waiting to cancel will be canceled."
+msgstr ""
+"Wenn du eine Bestellung freigibst, wird die wartende Kund*in eine E-Mail "
+"bekommen, dass ihre Bestellung freigegeben wurde und bezahlt werden muss. "
+"Sobald die Bestellung bezahlt ist, wird eine passende Stornoanfrage "
+"durchgeführt."
+
+#: pretix_swap/templates/pretix_swap/control/stats.html:34
+msgid "Available in quota"
+msgstr "Kapazität"
+
+#: pretix_swap/templates/pretix_swap/control/stats.html:36
+msgid "Orders waiting for approval"
+msgstr "Bestellungen ohne Freigabe"
+
+#: pretix_swap/templates/pretix_swap/control/stats.html:37
+msgid "Orders waiting for payment"
+msgstr "Unbezahlte Bestellungen"
+
+#: pretix_swap/templates/pretix_swap/control/stats.html:38
+msgid "Cancelation requests"
+msgstr "Stornoanfragen"
+
+#: pretix_swap/templates/pretix_swap/control/stats.html:39
+#: pretix_swap/templates/pretix_swap/control/stats.html:68
+msgid "Approve orders"
+msgstr "Bestellungen freigeben"
+
+#: pretix_swap/templates/pretix_swap/control/stats.html:61
+msgid "There are currently no open requests."
+msgstr "Es gibt derzeit keine offenen Anfragen"
+
+#: pretix_swap/templates/pretix_swap/control/stats.html:75
+msgid "Request overview"
+msgstr "Übersicht über Tausch- und Stornoanfragen"
+
+#: pretix_swap/templates/pretix_swap/control/stats.html:80
+msgid "Product"
+msgstr "Produkt"
+
+#: pretix_swap/templates/pretix_swap/control/stats.html:81
+msgid "Waiting swaps"
+msgstr "Wartend auf Tausch"
+
+#: pretix_swap/templates/pretix_swap/control/stats.html:82
+msgid "Completed swaps"
+msgstr "Tausch durchgeführt"
+
+#: pretix_swap/templates/pretix_swap/control/stats.html:83
+msgid "Waiting cancelations"
+msgstr "Wartend auf Storno"
+
+#: pretix_swap/templates/pretix_swap/control/stats.html:84
+msgid "Completed cancelations"
+msgstr "Storno durchgeführt"
+
+#: pretix_swap/templates/pretix_swap/presale/cancel.html:7
+#: pretix_swap/templates/pretix_swap/presale/order_box.html:25
+msgid "Cancel request"
+msgstr "Anfrage zurückziehen"
+
+#: pretix_swap/templates/pretix_swap/presale/cancel.html:10
+#, python-format
+msgid "Cancel request for your order: %(code)s"
+msgstr "Ziehe die Anfrage für deine Bestellung %(code)s zurück"
+
+#: pretix_swap/templates/pretix_swap/presale/cancel.html:14
+#: pretix_swap/templates/pretix_swap/presale/new.html:24
+msgid "TEST MODE"
+msgstr "TEST MODUS"
+
+#: pretix_swap/templates/pretix_swap/presale/cancel.html:18
+#: pretix_swap/templates/pretix_swap/presale/new.html:28
+msgid "Back to order"
+msgstr "Zurück zur Bestellseite"
+
+#: pretix_swap/templates/pretix_swap/presale/cancel.html:25
+msgid "You requested to swap this order item with somebody else."
+msgstr "Du hast angefragt, dieses Produkt mit jemandem zu tauschen."
+
+#: pretix_swap/templates/pretix_swap/presale/cancel.html:27
+msgid ""
+"You requested to cancel this order item and give your place to somebody else."
+msgstr ""
+"Du hast angefragt, dieses Produkt zu stornieren und deinen Platz jemand "
+"anderem zu geben."
+
+#: pretix_swap/templates/pretix_swap/presale/cancel.html:29
+msgid "Do you really want to cancel this request?"
+msgstr "Möchtest du diese Anfrage wirklich zurückziehen?"
+
+#: pretix_swap/templates/pretix_swap/presale/cancel.html:33
+msgid "No, take me back"
+msgstr "Nein, abbrechen"
+
+#: pretix_swap/templates/pretix_swap/presale/cancel.html:36
+msgid "Yes, cancel request"
+msgstr "Ja, Anfrage zurückziehen"
+
+#: pretix_swap/templates/pretix_swap/presale/new.html:7
+#: pretix_swap/templates/pretix_swap/presale/order_box.html:34
+msgid "New request"
+msgstr "Neue Anfrage"
+
+#: pretix_swap/templates/pretix_swap/presale/new.html:11
+#, python-format
+msgid "Request to swap or cancel your order: %(code)s"
+msgstr "Tausch- oder Stornoanfrage für deine Bestellung %(code)s"
+
+#: pretix_swap/templates/pretix_swap/presale/new.html:15
+#, python-format
+msgid "Request to swap your order: %(code)s"
+msgstr "Tauschanfrage für deine Bestellung %(code)s"
+
+#: pretix_swap/templates/pretix_swap/presale/new.html:19
+#, python-format
+msgid "Request to cancel your order: %(code)s"
+msgstr "Stornoanfrage für deine Bestellung %(code)s"
+
+#: pretix_swap/templates/pretix_swap/presale/new.html:35
+msgid "You can request to <b>swap</b> or <b>cancel</b> your order here."
+msgstr ""
+"Du kannst hier den <b>Tausch</b> oder die <b>Stornierung</b> deiner "
+"Bestellung anfragen."
+
+#: pretix_swap/templates/pretix_swap/presale/new.html:39
+#: pretix_swap/templates/pretix_swap/presale/new.html:50
+msgid ""
+"Swap requests will be approved automatically once a swap partner has been "
+"found."
+msgstr ""
+"Tauschanfragen werden automatisch durchgeführt, sobald ein passender "
+"Tauschpartner gefunden wird."
+
+#: pretix_swap/templates/pretix_swap/presale/new.html:43
+#: pretix_swap/templates/pretix_swap/presale/new.html:57
+msgid ""
+"Cancelation requests will first be approved by the organizers, and will then "
+"be processed once then next person on the waiting list has paid for their "
+"new order."
+msgstr ""
+"Stornoanfragen müssen erst von den Veranstaltern bewilligt werden. Dann "
+"werden sie weiter verarbeitet, sobald die nächste Person von der Warteliste "
+"ihr Ticket bestellt und bezahlt hat."
+
+#: pretix_swap/templates/pretix_swap/presale/new.html:47
+msgid "You can request to <b>swap</b> your order here."
+msgstr "Du kannst hier den <b>Tausch</b> deines Tickets anfragen."
+
+#: pretix_swap/templates/pretix_swap/presale/new.html:54
+msgid "You can request to <b>cancel</b> your order here."
+msgstr "Du kannst hier die <b>Stornierung</b> deiner Bestellung anfragen."
+
+#: pretix_swap/templates/pretix_swap/presale/new.html:91
+#: pretix_swap/templates/pretix_swap/presale/new.html:98
+msgid ""
+"You can withdraw a swap request as long as no swap partner has been found "
+"for you."
+msgstr ""
+"Du kannst die Tauschanfrage so lange zurückziehen, wie sich kein "
+"Tauschpartner gefunden hat."
+
+#: pretix_swap/templates/pretix_swap/presale/new.html:94
+#: pretix_swap/templates/pretix_swap/presale/new.html:102
+msgid "You cannot withdraw cancelation requests – they are <b>permanent</b>."
+msgstr ""
+"Eine Stornoanfrage kannst du nicht mehr zurückziehen – sie ist "
+"<b>unwiderruflich</b>."
+
+#: pretix_swap/templates/pretix_swap/presale/new.html:108
+msgid "Send request"
+msgstr "Anfrage abschicken"
+
+#: pretix_swap/templates/pretix_swap/presale/order_box.html:7
+#: pretix_swap/templates/pretix_swap/presale/require_approval_box.html:6
+msgid "Ticket transfer"
+msgstr "Ticket übertragen"
+
+#: pretix_swap/templates/pretix_swap/presale/order_box.html:18
+msgid "If you want to swap with somebody specific, give them this swap token: "
+msgstr ""
+"Wenn du deine Bestellung mit jemand bestimmtem tauschen möchtest, gib dieser "
+"Person diesen Tauschcode: "
+
+#: pretix_swap/templates/pretix_swap/presale/order_box.html:19
+#: pretix_swap/templates/pretix_swap/presale/require_approval_box.html:13
+msgid "Click to copy"
+msgstr "Zum Kopieren anklicken"
+
+#: pretix_swap/templates/pretix_swap/presale/order_box.html:32
+msgid "You can request to swap or cancel this product."
+msgstr "Du kannst dieses Produkt tauschen oder stornieren."
+
+#: pretix_swap/templates/pretix_swap/presale/order_box.html:37
+msgid "This product cannot be changed at the moment."
+msgstr "Dieses Produkt kann derzeit nicht verändert werden."
+
+#: pretix_swap/templates/pretix_swap/presale/require_approval_box.html:11
+msgid ""
+"If you know somebody who has a ticket and would like to pass it to you, give "
+"them this token (your order code) to enter on their ticket page:"
+msgstr ""
+"Wenn du jemanden kennst, der ein Ticket hat und an dich weitergeben möchte, "
+"gib dieser Person diesen Code (deine Bestellnummer) zur Eingabe auf ihrer "
+"Weitergabeseite:"
+
+#: pretix_swap/templates/pretix_swap/presale/require_approval_box.html:18
+msgid ""
+"Once they have entered your code and the organizers have approved the "
+"request, you will receive a notification that your order has been approved. "
+"You will then need to complete payment as soon as possible to make sure you "
+"will receive the ticket."
+msgstr ""
+"Sobald diese Person deinen Code eingeben hat und die Veranstalter die "
+"Anfrage freigegeben haben, wirst du eine Benachrichtigung erhalten, dass "
+"deine Bestellung jetzt freigegeben ist. Dann kannst du sie (so schnell wie "
+"möglich) bezahlen, um sicherzustellen, dass du dein Ticket erhältst."
+
+#: pretix_swap/templates/pretix_swap/presale/require_approval_box.html:24
+msgid ""
+"Somebody has requested to pass their ticket to you. Please wait until this "
+"transfer is approved by the event organizers."
+msgstr ""
+"Jemand möchte dir ein Ticket weitergeben. Bitte warte, bis diese Anfrage von "
+"den Veranstaltern freigegeben wird."
+
+#: pretix_swap/templates/pretix_swap/presale/require_approval_box.html:25
+msgid ""
+"Once they have approved the request, you will receive a notification that "
+"your order has been approved. You will then need to complete payment as soon "
+"as possible to make sure you will receive the ticket."
+msgstr ""
+"Sobald die Veranstalter die Anfrage freigegeben haben, wirst du eine "
+"Benachrichtigung erhalten, dass deine Bestellung jetzt freigegeben ist. Dann "
+"kannst du sie (so schnell wie möglich) bezahlen, um sicherzustellen, dass du "
+"dein Ticket erhältst."
+
+#: pretix_swap/views.py:85
+#, python-brace-format
+msgid "Approved {orders_approved} orders."
+msgstr "{orders_approved} Bestellungen freigegeben"
+
+#: pretix_swap/views.py:284
+msgid "Your changes have been saved."
+msgstr "Deine Änderungen wurden gespeichert."
+
+#: pretix_swap/views.py:360
+msgid "We have canceled your request."
+msgstr "Wir haben deine Anfrage abgebrochen."
+
+#: pretix_swap/views.py:383
+msgid "Request a swap"
+msgstr "Ticket tauschen"
+
+#: pretix_swap/views.py:385
+msgid "Request cancelation"
+msgstr "Ticket stornieren"
+
+#: pretix_swap/views.py:406
+msgid "We received your request and matched you directly!"
+msgstr ""
+"Wir haben deine Anfrage erhalten und direkt einen Tauschpartner gefunden!"
+
+#: pretix_swap/views.py:412
+msgid ""
+"We have received your request – please wait while we try to find a match for "
+"you."
+msgstr ""
+"Wir haben deine Anfrage erhalten – bitte warte, während wir einen "
+"Tauschpartner für dich suchen."
+
+#: pretix_swap/views.py:419
+msgid ""
+"We received your request. Once you enter a swapping code or give your code "
+"to somebody else, this process can continue. We will notify you then."
+msgstr ""
+"Wir haben deine Anfrage erhalten. Sobald jemand deinen Tauschcode eingibt, "
+"kann der Ablauf weitergehen. Wir werden dich dann benachrichtigen."

@@ -81,14 +81,6 @@ class SwapGroupForm(I18nModelForm):
             raise ValidationError(_("Please select at least one item!"))
         return data
 
-    def clean_right(self):
-        data = self.cleaned_data.get("right")
-        if not data:
-            raise ValidationError(
-                _("Please select at least one item on the right side!")
-            )
-        return data
-
     def clean(self):
         cleaned_data = super().clean()
         items = set(cleaned_data.get("items") or [])
