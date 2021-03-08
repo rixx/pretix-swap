@@ -277,12 +277,12 @@ class SwapRequestForm(forms.Form):
         cleaned_data = super().clean()
         if not (
             cleaned_data["swap_type"] == SwapRequest.Types.SWAP
-            and cleaned_data["swap_method"] == SwapRequest.Methods.SPECIFIC
+            and cleaned_data.get("swap_method") == SwapRequest.Methods.SPECIFIC
         ):
             cleaned_data["swap_code"] = None
         if not (
             cleaned_data["swap_type"] == SwapRequest.Types.CANCELATION
-            and cleaned_data["cancel_method"] == SwapRequest.Methods.SPECIFIC
+            and cleaned_data.get("cancel_method") == SwapRequest.Methods.SPECIFIC
         ):
             cleaned_data["cancel_code"] = None
         return cleaned_data
