@@ -274,19 +274,23 @@ class SwapRequestForm(forms.Form):
 
     def clean(self):
         cleaned_data = super().clean()
-        if not (
+        if (
             cleaned_data["swap_type"] == SwapRequest.Types.SWAP
             and cleaned_data.get("swap_method") == SwapRequest.Methods.SPECIFIC
         ):
+            self._clean_swap_code()
+        else:
             cleaned_data["swap_code"] = None
-        if not (
+        if (
             cleaned_data["swap_type"] == SwapRequest.Types.CANCELATION
             and cleaned_data.get("cancel_method") == SwapRequest.Methods.SPECIFIC
         ):
+            self._clean_cancel_code()
+        else:
             cleaned_data["cancel_code"] = None
         return cleaned_data
 
-    def clean_swap_code(self):
+    def _clean_swap_code(self):
         data = self.cleaned_data.get("swap_code")
         if not data:
             return data
@@ -297,9 +301,7 @@ class SwapRequestForm(forms.Form):
         ).first()
         if not partner:
             raise ValidationError(_("Unknown swap code!"))
-        position = self.cleaned_data.get(
-            "position"
-        )  # TODO this is a potential error source
+        position = self.cleaned_data.get("position")
         items = get_swappable_items(position.item)
         if partner.position.item not in items:
             raise ValidationError(
@@ -313,7 +315,7 @@ class SwapRequestForm(forms.Form):
         self.partner = partner
         return partner
 
-    def clean_cancel_code(self):
+    def _clean_cancel_code(self):
         data = self.cleaned_data.get("cancel_code")
         if not data:
             raise ValidationError(
@@ -326,9 +328,7 @@ class SwapRequestForm(forms.Form):
         if not order:
             raise ValidationError(_("Unknown cancelation code."))
 
-        position = self.cleaned_data.get(
-            "position"
-        )  # TODO this is a potential error source
+        position = self.cleaned_data.get("position")
         items = get_cancelable_items(position.item)
         other_position = (
             order.positions.first()
