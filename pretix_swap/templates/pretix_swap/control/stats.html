@@ -8,8 +8,21 @@
 {% block content %}
     <h1>{% trans "Swap Request Statistics" %}</h1>
 
-    <h2>{% trans "Requests by product" %}</h2>
-    {% trans "This table shows the <b>open</b> requests with no match (paid or unpaid)." %}{#TODO words #}
+    <h2>{% trans "Approve cancelations" %}</h2>
+    <div class="alert alert-info">
+        <p>
+        {% blocktrans trimmed %}
+        With this table, you can see how many users currently want to cancel their orders, and if there are matching orders waiting for approval.
+        You can approve orders (as long as your quotas permit it).
+        {% endblocktrans %}
+        </p>
+        <p>
+        {% blocktrans trimmed %}
+        When you approve orders, the waiting customers are sent an email that their order is now <i>pending</i> and that they need to pay.
+        Only once they have paid, a matching order waiting to cancel will be canceled.
+        {% endblocktrans %}
+        </p>
+    </div>
     <form method="post">
         {% csrf_token %}
         <div class="table-responsive">
@@ -17,7 +30,6 @@
                 <thead>
                 <tr>
                     <th></th>
-                    <th class="text-right">{% trans "Swap requests" %}</th>
                     {% for subevent in subevents %}
                         <th class="text-right">{% trans "Available in quota" %} {% if subevent %}<br>{{ subevent.name }}{% endif %}</th>
                     {% endfor %}
@@ -35,7 +47,6 @@
                             {{ product.item }}
                             </a>
                         </th>
-                        <td class="text-right">{{ product.open_swap_requests }}</td>
                         {% for avail in product.available_in_quota %}
                             <td class="text-right">{{ avail }}</td>
                         {% endfor %}
@@ -61,32 +72,32 @@
     <p></p>
     <hr>
     <p></p>
-    <h2>{% trans "Requests by state" %}</h2>
+    <h2>{% trans "Request overview" %}</h2>
     <div class="table-responsive">
         <table class="table table-hover table-quotas">
             <thead>
             <tr>
-                <th></th>
-                <th class="text-right">{% trans "Swaps" %}</th>
-                <th class="text-right">{% trans "Cancelations" %}</th>
+                <th>{% trans "Product" %}</th>
+                <th class="text-right">{% trans "Waiting swaps" %}</th>
+                <th class="text-right">{% trans "Completed swaps" %}</th>
+                <th class="text-right">{% trans "Waiting cancelations" %}</th>
+                <th class="text-right">{% trans "Completed cancelations" %}</th>
             </tr>
             </thead>
             <tbody>
+                {% for line in overview %}
                 <tr>
-                    <th>{% trans "Requested" %}</th>
-                    <td class="text-right">{{ by_state.swap.open }}</td>
-                    <td class="text-right">{{ by_state.cancel.open }}</td>
+                    <td>
+                    <a href="{% eventurl request.event "control:event.item" organizer=request.organizer.slug event=request.event.slug item=line.item.id %}">
+                    {{ line.item }}
+                    </a>
+                    </td>
+                    <td class="text-right">{{ line.open_swap_requests }}</td>
+                    <td class="text-right">{{ line.completed_swap_requests }}</td>
+                    <td class="text-right">{{ line.open_cancelation_requests }}</td>
+                    <td class="text-right">{{ line.completed_cancelation_requests }}</td>
                 </tr>
-                <tr>
-                    <th>{% trans "Completed" %}</th>
-                    <td class="text-right">{{ by_state.swap.done }}</td>
-                    <td class="text-right">{{ by_state.cancel.done }}</td>
-                </tr>
-                <tr>
-                    <th>{% trans "Total" %}</th>
-                    <th class="text-right">{{ by_state.swap.total }}</th>
-                    <th class="text-right">{{ by_state.cancel.total }}</th>
-                </tr>
+                {% endfor %}
             </tbody>
         </table>
     </div>

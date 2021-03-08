@@ -33,7 +33,7 @@ class SwapStats(EventPermissionRequiredMixin, FormView):
 
     def get_context_data(self, *args, **kwargs):
         ctx = super().get_context_data(*args, **kwargs)
-        ctx["by_state"] = self._get_requests_by_state()
+        ctx["overview"] = self.requests_by_state
         products = self.requests_by_product
         form = ctx["form"]
         for line in products:
@@ -122,6 +122,7 @@ class SwapStats(EventPermissionRequiredMixin, FormView):
             state=SwapRequest.States.REQUESTED,
             partner__isnull=True,
             position__order__status="p",  # Should already be the case, but hey
+            swap_type=SwapRequest.Types.CANCELATION,
         ).select_related("position", "position__item")
         positions = OrderPosition.objects.filter(
             order__status="n",  # Pending orders with and without approval
@@ -146,11 +147,7 @@ class SwapStats(EventPermissionRequiredMixin, FormView):
                 {
                     "item": item,
                     "available_in_quota": availabilities,
-                    "open_swap_requests": requests.filter(
-                        swap_type=SwapRequest.Types.SWAP
-                    ).count(),
                     "open_cancelation_requests": requests.filter(
-                        swap_type=SwapRequest.Types.CANCELATION,
                         position__item=item,
                     ).count(),
                     "approval_orders": positions.filter(
@@ -163,40 +160,39 @@ class SwapStats(EventPermissionRequiredMixin, FormView):
             )
         return result
 
-    def _get_requests_by_state(self):
+    @cached_property
+    def requests_by_state(self):
         requests = SwapRequest.objects.filter(position__order__event=self.request.event)
-        return {
-            "swap": {
-                "open": len(
-                    requests.filter(
+        items = list(set(requests.values_list("position__item", flat=True)))
+        result = []
+        for item in items:
+            item = self.request.event.items.get(pk=item)
+            result.append(
+                {
+                    "item": item,
+                    "open_swap_requests": requests.filter(
                         swap_type=SwapRequest.Types.SWAP,
                         state=SwapRequest.States.REQUESTED,
-                    )
-                ),
-                "done": len(
-                    requests.filter(
+                        position__item=item,
+                    ).count(),
+                    "completed_swap_requests": requests.filter(
                         swap_type=SwapRequest.Types.SWAP,
                         state=SwapRequest.States.COMPLETED,
-                    )
-                ),
-                "total": len(requests.filter(swap_type=SwapRequest.Types.SWAP)),
-            },
-            "cancel": {
-                "open": len(
-                    requests.filter(
+                        position__item=item,
+                    ).count(),
+                    "open_cancelation_requests": requests.filter(
                         swap_type=SwapRequest.Types.CANCELATION,
                         state=SwapRequest.States.REQUESTED,
-                    )
-                ),
-                "done": len(
-                    requests.filter(
+                        position__item=item,
+                    ).count(),
+                    "completed_cancelation_requests": requests.filter(
                         swap_type=SwapRequest.Types.CANCELATION,
                         state=SwapRequest.States.COMPLETED,
-                    )
-                ),
-                "total": len(requests.filter(swap_type=SwapRequest.Types.CANCELATION)),
-            },
-        }
+                        position__item=item,
+                    ).count(),
+                }
+            )
+        return result
 
 
 class SwapSettings(EventSettingsViewMixin, EventSettingsFormView):

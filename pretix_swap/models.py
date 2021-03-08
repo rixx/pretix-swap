@@ -28,11 +28,12 @@ class SwapGroup(models.Model):
         "pretixbase.Item",
         blank=True,
         related_name="+",
-        verbose_name=_("Group A"),
+        verbose_name=_("Products"),
         help_text=_(
             ""
-            "For swap groups: All items selected can be swapped with one another. "
-            "For cancel groups: All items selected can be canceled in favour of one another, as long as the new item is as least as expensive as the old one."
+            "For swap groups: All products selected can be swapped with one another. "
+            "For cancel groups: All products selected can be canceled in favour of one another, "
+            "as long as the new product is as least as expensive as the old one."
         ),
     )
 
