@@ -18,7 +18,9 @@
                 <tr>
                     <th></th>
                     <th class="text-right">{% trans "Swap requests" %}</th>
-                    <th class="text-right">{% trans "Available in qutoa" %}</th>
+                    {% for subevent in subevents %}
+                        <th class="text-right">{% trans "Available in quota" %} {% if subevent %}<br>{{ subevent.name }}{% endif %}</th>
+                    {% endfor %}
                     <th class="text-right">{% trans "Orders waiting for approval" %}</th>
                     <th class="text-right">{% trans "Orders waiting for payment" %}</th>
                     <th class="text-right">{% trans "Cancelation requests" %}</th>
@@ -34,7 +36,9 @@
                             </a>
                         </th>
                         <td class="text-right">{{ product.open_swap_requests }}</td>
-                        <td class="text-right">{{ product.available_in_quota }}</td>
+                        {% for avail in product.available_in_quota %}
+                            <td class="text-right">{{ avail }}</td>
+                        {% endfor %}
                         <td class="text-right">{{ product.approval_orders }}</td>
                         <td class="text-right">{{ product.pending_orders }}</td>
                         <td class="text-right">{{ product.open_cancelation_requests }}</td>

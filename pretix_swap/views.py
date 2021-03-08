@@ -39,6 +39,7 @@ class SwapStats(EventPermissionRequiredMixin, FormView):
         for line in products:
             line["form_field"] = form[f"item_{line['item'].pk}"]
         ctx["by_products"] = products
+        ctx["subevents"] = self.subevents
         return ctx
 
     def get_form_kwargs(self):
@@ -111,6 +112,10 @@ class SwapStats(EventPermissionRequiredMixin, FormView):
         return approved
 
     @cached_property
+    def subevents(self):
+        return list(self.request.event.subevents.all()) or [None]
+
+    @cached_property
     def requests_by_product(self):
         requests = SwapRequest.objects.filter(
             position__order__event=self.request.event,
@@ -129,15 +134,18 @@ class SwapStats(EventPermissionRequiredMixin, FormView):
         result = []
         for item in items:
             item = self.request.event.items.get(pk=item)
-            availability = item.check_quotas(subevent=position.subevent)
-            if not availability[1] and availability[0] == 100:
-                availability = "∞"
-            else:
-                availability = availability[1]
+            availabilities = []
+            for subevent in self.subevents:
+                availability = item.check_quotas(subevent=subevent)
+                if not availability[1] and availability[0] == 100:
+                    availability = "∞"
+                else:
+                    availability = availability[1]
+                availabilities.append(availability)
             result.append(
                 {
                     "item": item,
-                    "available_in_quota": availability,
+                    "available_in_quota": availabilities,
                     "open_swap_requests": requests.filter(
                         swap_type=SwapRequest.Types.SWAP
                     ).count(),
