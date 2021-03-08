@@ -129,7 +129,7 @@ class SwapStats(EventPermissionRequiredMixin, FormView):
         result = []
         for item in items:
             item = self.request.event.items.get(pk=item)
-            availability = item.check_quotas()
+            availability = item.check_quotas(subevent=position.subevent)
             if not availability[1] and availability[0] == 100:
                 availability = "∞"
             else:
