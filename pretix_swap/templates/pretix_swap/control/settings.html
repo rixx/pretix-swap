@@ -67,8 +67,7 @@
                     <tr>
                         <th>{% trans "Name" %}</th>
                         <th>{% trans "Type" %}</th>
-                        <th>{% trans "Group A" %}</th>
-                        <th>{% trans "Group B" %}</th>
+                        <th>{% trans "Items" %}</th>
                         <th></th>
                     </tr>
                     </thead>
@@ -90,12 +89,7 @@
                             {% endif %}
                         </td>
                         <td>
-                            {% for item in sg.left.all %}
-                                {{ item.name }}<br>
-                            {% endfor %}
-                        </td>
-                        <td>
-                            {% for item in sg.right.all %}
+                            {% for item in sg.items.all %}
                                 {{ item.name }}<br>
                             {% endfor %}
                         </td>

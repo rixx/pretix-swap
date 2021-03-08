@@ -24,11 +24,16 @@ class SwapGroup(models.Model):
         max_length=1, choices=Types.choices, verbose_name=_("Group type")
     )
 
-    left = models.ManyToManyField(
-        "pretixbase.Item", blank=True, related_name="+", verbose_name=_("Group A")
-    )
-    right = models.ManyToManyField(
-        "pretixbase.Item", blank=True, related_name="+", verbose_name=_("Group B")
+    items = models.ManyToManyField(
+        "pretixbase.Item",
+        blank=True,
+        related_name="+",
+        verbose_name=_("Group A"),
+        help_text=_(
+            ""
+            "For swap groups: All items selected can be swapped with one another. "
+            "For cancel groups: All items selected can be canceled in favour of one another, as long as the new item is as least as expensive as the old one."
+        ),
     )
 
     objects = ScopedManager(organizer="event__organizer")

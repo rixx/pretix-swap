@@ -69,19 +69,16 @@ class SwapGroupForm(I18nModelForm):
         self.request = request
         kwargs["locales"] = self.event.settings.locales if self.event else ["en"]
         super().__init__(*args, **kwargs)
-        self.fields["left"].queryset = Item.objects.filter(event=event)
-        self.fields["right"].queryset = Item.objects.filter(event=event)
+        self.fields["items"].queryset = Item.objects.filter(event=event)
 
     def save(self, *args, **kwargs):
         self.instance.event = self.event
         return super().save(*args, **kwargs)
 
-    def clean_left(self):
-        data = self.cleaned_data.get("left")
+    def clean_items(self):
+        data = self.cleaned_data.get("items")
         if not data:
-            raise ValidationError(
-                _("Please select at least one item on the left side!")
-            )
+            raise ValidationError(_("Please select at least one item!"))
         return data
 
     def clean_right(self):
@@ -94,22 +91,11 @@ class SwapGroupForm(I18nModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        left = set(cleaned_data.get("left") or [])
-        right = set(cleaned_data.get("right") or [])
+        items = set(cleaned_data.get("items") or [])
 
         is_swap = cleaned_data.get("swap_type") == SwapGroup.Types.SWAP
-        if is_swap:
-            if left & right:
-                items = ", ".join(str(item.name) for item in (left & right))
-                raise ValidationError(
-                    str(
-                        _(
-                            "Please include every item only on one side! Incorrect item(s): {items}"
-                        )
-                    ).format(items=items)
-                )
         prices = set()
-        for item in left | right:
+        for item in items:
             prices.add(item.default_price)
         if len(prices) > 1:
             if is_swap:
@@ -132,12 +118,10 @@ class SwapGroupForm(I18nModelForm):
         fields = (
             "name",
             "swap_type",
-            "left",
-            "right",
+            "items",
         )
         field_classes = {
-            "left": ItemModelMultipleChoiceField,
-            "right": ItemModelMultipleChoiceField,
+            "items": ItemModelMultipleChoiceField,
         }
 
 

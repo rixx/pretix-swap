@@ -209,7 +209,7 @@ class SwapSettings(EventSettingsViewMixin, EventSettingsFormView):
         ctx = super().get_context_data(*args, **kwargs)
         ctx["swap_groups"] = (
             self.request.event.swap_groups.all()
-            .prefetch_related("left", "right")
+            .prefetch_related("items")
             .order_by("swap_type")
         )
         swap_groups = ctx["swap_groups"].filter(swap_type="s")

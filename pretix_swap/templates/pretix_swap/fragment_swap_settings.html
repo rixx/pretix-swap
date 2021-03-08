@@ -1,37 +1,7 @@
 {% load bootstrap3 %}
 {% load i18n %}
 
-<div class="form-group {% if form.left.errors or form.right.errors %}has-error{% endif %}">
-    <label class="col-md-3 control-label">
-        {% trans "Swappable items" %}
-    </label>
-    <div class="col-md-9">
-        <div class="swap-settings-group col-md-12">
-            <div class="swap-settings-column col-md-5">
-                {% bootstrap_field form.left layout="inline" %}
-            </div>
-            <div class="col-md-2 text-center">
-                <p>&nbsp;</p>
-                <i class="fa fa-arrows-h fa-4x text-muted"></i>
-            </div>
-            <div class="swap-settings-column col-md-5">
-                {% bootstrap_field form.right layout="inline" %}
-            </div>
-        </div>
-        <div class="help-block">
-            <p>
-            {% trans "For swap groups: All items selected on the left side can be swapped with all items selected on the right side." %}
-            {% trans "To keep things manageable, you may want to have only one item on the left side and all the items it can be swapped against on the right side." %}
-            </p>
-            <p>
-            {% trans "For cancel groups: All items selected on the left side can be canceled in favour of all items selected on the right side <b>and vice versa</b>." %}
-            </p>
-            {% if form.left.errors %}
-                <br>{{ form.left.errors }}
-            {% endif %}
-            {% if form.right.errors %}
-                <br>{{ form.right.errors }}
-            {% endif %}
-        </div>
-    </div>
-</div>
+{% bootstrap_form_errors form %}
+{% bootstrap_field form.name layout="control" %}
+{% bootstrap_field form.swap_type layout="control" %}
+{% bootstrap_field form.items layout="control" %}

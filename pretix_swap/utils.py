@@ -1,8 +1,7 @@
 def get_applicable_items(event):
     result = set()
-    for swap_group in event.swap_groups.all().prefetch_related("left", "right"):
-        result |= set(swap_group.left.all())
-        result |= set(swap_group.right.all())
+    for swap_group in event.swap_groups.all().prefetch_related("items"):
+        result |= set(swap_group.items.all())
     return result
 
 
@@ -11,13 +10,11 @@ def get_swappable_items(item, groups=None):
 
     groups = groups or item.event.swap_groups.filter(
         swap_type=SwapGroup.Types.SWAP
-    ).prefetch_related("left", "right")
+    ).prefetch_related("items")
     result = set()
     for group in groups:
-        if item in group.left.all():
-            result |= set(group.right.all())
-        elif item in group.right.all():
-            result |= set(group.left.all())
+        if item in group.items.all():
+            result |= set(group.items.all())
     return result
 
 
@@ -26,13 +23,11 @@ def get_cancelable_items(item, groups=None):
 
     groups = groups or item.event.swap_groups.filter(
         swap_type=SwapGroup.Types.CANCELATION
-    ).prefetch_related("left", "right")
+    ).prefetch_related("items")
     result = set()
     for group in groups:
-        if item in group.left.all():
-            result |= set(group.right.all())
-        elif item in group.right.all():
-            result |= set(group.left.all())
+        if item in group.items.all():
+            result |= set(group.items.all())
     return result
 
 
@@ -45,7 +40,7 @@ def match_open_swap_requests(event):
     from .models import SwapGroup, SwapRequest
 
     groups = event.swap_groups.filter(swap_type=SwapGroup.Types.SWAP).prefetch_related(
-        "left", "right"
+        "items"
     )
     open_requests = (
         SwapRequest.objects.filter(
