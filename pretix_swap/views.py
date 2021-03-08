@@ -345,6 +345,7 @@ class SwapCancel(EventViewMixin, OrderDetailMixin, TemplateView):
             position__order=self.order,
             pk=self.kwargs["pk"],
             state=SwapRequest.States.REQUESTED,
+            swap_type=SwapRequest.Types.SWAP,
             position__order__status="p",
         )
 

@@ -143,10 +143,16 @@ def order_info_bottom(sender, request, order, **kwargs):
     if not states and not can_swap:
         return
 
+    positions = order.positions.all().prefetch_related("swap_states")
+    for position in positions:
+        position.no_active_requests = not position.swap_states.filter(
+            state=SwapRequest.States.REQUESTED
+        ).exists()
+        position.ordered_requests = position.swap_states.order_by("requested")
     template = get_template("pretix_swap/presale/order_box.html")
     ctx = {
         "request": request,
-        "positions": order.positions.all().prefetch_related("swap_states"),
+        "positions": positions,
         "items": items,
         "specific_swap_allowed": event.settings.swap_orderpositions
         and event.settings.swap_orderpositions_specific,
