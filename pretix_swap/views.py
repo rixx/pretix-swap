@@ -408,16 +408,18 @@ class SwapCreate(EventViewMixin, OrderDetailMixin, FormView):
             messages.success(
                 self.request,
                 _(
-                    "We received your request – please wait while we try to find a match for you."
+                    "We have received your request – please wait while we try to find a match for you."
                 ),
             )
         else:
             messages.success(
                 self.request,
                 _(
-                    "We received your request. Once you enter a swapping code or give your code to somebody else, this process can continue."
+                    "We received your request. "
+                    "Once you enter a swapping code or give your code to somebody else, this process can continue. "
+                    "We will notify you then."
                 ),
-            )  # TODO wording
+            )
         return super().form_valid(form)
 
     def get_success_url(self):

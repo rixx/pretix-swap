@@ -7,13 +7,25 @@
     </div>
     <div class="panel-body">
         {% if not in_progress %}
+        <p>
             {% trans "If you know somebody who has a ticket and would like to pass it to you, give them this token (your order code) to enter on their ticket page:" %}
                 <span class="btn btn-default">
             <span data-toggle="tooltip" data-placement="bottom" title="{% trans "Click to copy" %}" class="copyable" data-destination="{{ secret }}">
                 {{ secret }}
                 </span></span>
+        </p>
+        <p>
+        {% blocktrans trimmed %}
+            Once they have entered your code and the organizers have approved the request, you will receive a notification that your order has been approved.
+            You will then need to complete payment as soon as possible to make sure you will receive the ticket.
+        {% endblocktrans %}
+        </p>
         {% else %}
             {% trans "Somebody has requested to pass their ticket to you. Please wait until this transfer is approved by the event organizers." %}
+            {% blocktrans trimmed %}
+                Once they have approved the request, you will receive a notification that your order has been approved.
+                You will then need to complete payment as soon as possible to make sure you will receive the ticket.
+            {% endblocktrans %}
         {% endif %}
     </div>
 </div>

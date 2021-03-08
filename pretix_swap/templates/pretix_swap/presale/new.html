@@ -30,6 +30,36 @@
         {% include "pretixpresale/event/fragment_order_status.html" with order=order event=request.event class="pull-right flip" %}
         <div class="clearfix"></div>
     </h2>
+    <div class="alert alert-info">
+        {% if form.fields.swap_type.choices|length > 1 %}
+            {% blocktrans trimmed %}
+            You can request to <b>swap</b> or <b>cancel</b> your order here.
+            {% endblocktrans %}
+            <br>
+            {% blocktrans trimmed %}
+            Swap requests will be approved automatically once a swap partner has been found.
+            {% endblocktrans %}
+            <br>
+            {% blocktrans trimmed %}
+            Cancelation requests will first be approved by the organizers, and will then be processed once then next person on the waiting list has paid for their new order.
+            {% endblocktrans %}
+        {% elif form.fields.swap_type.choices.0.0 == "s" %}
+            {% blocktrans trimmed %}
+            You can request to <b>swap</b> your order here.
+            {% endblocktrans %}
+            {% blocktrans trimmed %}
+            Swap requests will be approved automatically once a swap partner has been found.
+            {% endblocktrans %}
+        {% else %}
+            {% blocktrans trimmed %}
+            You can request to <b>cancel</b> your order here.
+            {% endblocktrans %}
+            {% blocktrans trimmed %}
+            Cancelation requests will first be approved by the organizers, and will then be processed once then next person on the waiting list has paid for their new order.
+            {% endblocktrans %}
+        {% endif %}
+
+    </div>
     <form method="post">{% csrf_token %}
     {% bootstrap_form_errors form %}
     {% if form.position %}
@@ -53,8 +83,29 @@
     {% for field in form.position_fields %}
         {% bootstrap_field field %}
     {% endfor %}
+    <div class="text-center">
+        <p>
+        </p>
+        <p>
+        {% if form.fields.swap_type.choices|length > 1 %}
+            {% blocktrans trimmed %}
+            You can withdraw a swap request as long as no swap partner has been found for you.
+            {% endblocktrans %}
+            {% blocktrans trimmed %}
+            You cannot withdraw cancelation requests – they are <b>permanent</b>.
+            {% endblocktrans %}
+        {% elif form.fields.swap_type.choices.0.0 == "s" %}
+            {% blocktrans trimmed %}
+            You can withdraw a swap request as long as no swap partner has been found for you.
+            {% endblocktrans %}
+        {% else %}
+            {% blocktrans trimmed %}
+            You cannot withdraw cancelation requests – they are <b>permanent</b>.
+            {% endblocktrans %}
+        {% endif %}
+        </p>
+    </div>
     <button type="submit" class="btn btn-primary btn-block">{% trans "Send request" %}</button>
     </form>
     <script src="{% static "pretix_swap/swap.js" %}"></script>
 {% endblock %}
-
