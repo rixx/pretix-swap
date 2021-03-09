@@ -181,7 +181,7 @@ class SwapRequest(models.Model):
                 variation=other_variation,
                 subevent=other.position.subevent,
             )
-            other_change_manager.change_item(
+            other_change_manager.change_item_and_subevent(
                 position=other.position,
                 item=my_item,
                 variation=my_variation,
@@ -233,16 +233,20 @@ class SwapRequest(models.Model):
             if self.target_item not in items:
                 raise Exception("Target item not allowed")
             items = [self.target_item]
-        other = SwapRequest.objects.filter(
-            models.Q(target_item__isnull=True)
-            | models.Q(target_item=self.position.item),
-            state=SwapRequest.States.REQUESTED,
-            swap_method=SwapRequest.Methods.FREE,
-            swap_type=SwapRequest.Types.SWAP,
-            position__order__event_id=self.event.pk,
-            position__item__in=items,
-            partner__isnull=True,
-        ).first()
+        other = (
+            SwapRequest.objects.filter(
+                models.Q(target_item__isnull=True)
+                | models.Q(target_item=self.position.item),
+                state=SwapRequest.States.REQUESTED,
+                swap_method=SwapRequest.Methods.FREE,
+                swap_type=SwapRequest.Types.SWAP,
+                position__order__event_id=self.event.pk,
+                position__item__in=items,
+                partner__isnull=True,
+            )
+            .exclude(pk=self.pk)
+            .first()
+        )
         if other:
             self.swap_with(other)
 

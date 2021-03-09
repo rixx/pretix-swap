@@ -15,7 +15,7 @@ def get_swappable_items(item, groups=None):
     for group in groups:
         if item in group.items.all():
             result |= set(group.items.all())
-    return result
+    return result - {item}
 
 
 def get_cancelable_items(item, groups=None):
