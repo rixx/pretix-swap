@@ -120,6 +120,8 @@ class SwapGroupForm(I18nModelForm):
 class PositionModelChoiceField(forms.ModelChoiceField):
     def label_from_instance(self, instance):
         label = str(instance)
+        if instance.subevent:
+            label = f"{label}, {instance.subevent.date_from.date.isoformat()}"
         if instance.attendee_name:
             return f"{label} ({instance.attendee_name})"
         return label
