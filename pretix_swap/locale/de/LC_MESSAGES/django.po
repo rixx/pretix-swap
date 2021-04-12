@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-03-09 00:14+0100\n"
+"POT-Creation-Date: 2021-04-12 19:24+0200\n"
 "PO-Revision-Date: \n"
 "Last-Translator: Tobias Kunze\n"
 "Language-Team: \n"
@@ -63,105 +63,98 @@ msgstr ""
 msgid "Please select at least one item!"
 msgstr ""
 
-#: pretix_swap/forms.py:88
-msgid "Please select at least one item on the right side!"
-msgstr ""
-
-#: pretix_swap/forms.py:103
+#: pretix_swap/forms.py:95
 msgid "You can only swap elements with the same price!"
 msgstr ""
 
-#: pretix_swap/forms.py:109
+#: pretix_swap/forms.py:101
 msgid ""
 "Your products include elements with different prices. Please note that "
 "cancelations will only be allowed when the new product has at least the same "
 "price as the canceled one, so that you will not lose money."
 msgstr ""
 
-#: pretix_swap/forms.py:157
+#: pretix_swap/forms.py:151
 msgid "Which item do you want to change?"
 msgstr ""
 
-#: pretix_swap/forms.py:164
+#: pretix_swap/forms.py:158
 msgid "Which product do you want instead?"
 msgstr ""
 
-#: pretix_swap/forms.py:174
+#: pretix_swap/forms.py:168
 msgid "What do you want to do?"
 msgstr ""
 
+#: pretix_swap/forms.py:177 pretix_swap/forms.py:201
+msgid "Direct Code"
+msgstr ""
+
+#: pretix_swap/forms.py:179
+msgid ""
+"Do you already know who you want to swap with? Enter their Direct Code here!"
+msgstr ""
+
 #: pretix_swap/forms.py:183
-msgid "Swap code"
+msgid "Do you want to swap your ticket:"
 msgstr ""
 
-#: pretix_swap/forms.py:185
+#: pretix_swap/forms.py:187
+msgid "With the next interested person."
+msgstr ""
+
+#: pretix_swap/forms.py:191
+msgid "With a specific person."
+msgstr ""
+
+#: pretix_swap/forms.py:203
 msgid ""
-"Do you already know who you want to swap with? Enter their swap code here!"
+"Do you already know who should take your place? Enter their Direct Code "
+"here! A code will be created after you chose to swap with a specific person "
+"and once you send your swap request."
 msgstr ""
 
-#: pretix_swap/forms.py:189
-msgid "Swap method"
+#: pretix_swap/forms.py:208
+msgid "Do you want to sell your ticket:"
 msgstr ""
 
-#: pretix_swap/forms.py:193
-msgid "Switch with the next interested person."
+#: pretix_swap/forms.py:212
+msgid "To the next person in line."
 msgstr ""
 
-#: pretix_swap/forms.py:197
-msgid "I want to switch with a specific person."
+#: pretix_swap/forms.py:216
+msgid "To a specific person."
 msgstr ""
 
-#: pretix_swap/forms.py:207
-msgid "Cancel code"
-msgstr ""
-
-#: pretix_swap/forms.py:209
-msgid ""
-"Do you already know who should take your place? Enter their waiting list "
-"code here!"
-msgstr ""
-
-#: pretix_swap/forms.py:213
-msgid "Cancelation method"
-msgstr ""
-
-#: pretix_swap/forms.py:217 pretix_swap/models.py:68
-msgid "Give my place to the next person in line."
-msgstr ""
-
-#: pretix_swap/forms.py:221
-msgid "I want my place to go to a specific person."
-msgstr ""
-
-#: pretix_swap/forms.py:303
+#: pretix_swap/forms.py:298
 msgid "Unknown swap code!"
 msgstr ""
 
-#: pretix_swap/forms.py:310
+#: pretix_swap/forms.py:305
 #, python-brace-format
 msgid ""
 "The swap code you entered is for the item '{other_item}', which is not "
 "compatible with your item '{your_item}'."
 msgstr ""
 
-#: pretix_swap/forms.py:323
+#: pretix_swap/forms.py:318
 msgid ""
-"If you want to give your ticket to somebody specific, please provide a "
-"cancelation code."
+"If you want to sell your ticket to somebody specific, please provide a "
+"direct code."
 msgstr ""
 
-#: pretix_swap/forms.py:329
+#: pretix_swap/forms.py:324
 msgid "Unknown cancelation code."
 msgstr ""
 
-#: pretix_swap/forms.py:340
+#: pretix_swap/forms.py:335
 #, python-brace-format
 msgid ""
 "The cancelation code you entered is for the item '{other_item}', which is "
 "not compatible with your item '{your_item}'."
 msgstr ""
 
-#: pretix_swap/forms.py:353
+#: pretix_swap/forms.py:348
 msgid "Somebody else has already requested to pass their ticket to this order."
 msgstr ""
 
@@ -190,6 +183,10 @@ msgid ""
 "For swap groups: All products selected can be swapped with one another. For "
 "cancel groups: All products selected can be canceled in favour of one "
 "another, as long as the new product is as least as expensive as the old one."
+msgstr ""
+
+#: pretix_swap/models.py:68
+msgid "Give my place to the next person in line."
 msgstr ""
 
 #: pretix_swap/models.py:69
@@ -584,15 +581,13 @@ msgid "You can request to <b>cancel</b> your order here."
 msgstr ""
 
 #: pretix_swap/templates/pretix_swap/presale/new.html:91
-#: pretix_swap/templates/pretix_swap/presale/new.html:98
-msgid ""
-"You can withdraw a swap request as long as no swap partner has been found "
-"for you."
+#: pretix_swap/templates/pretix_swap/presale/new.html:102
+msgid "A ticket offered for sale can not be withdrawed from the sale."
 msgstr ""
 
 #: pretix_swap/templates/pretix_swap/presale/new.html:94
-#: pretix_swap/templates/pretix_swap/presale/new.html:102
-msgid "You cannot withdraw cancelation requests – they are <b>permanent</b>."
+#: pretix_swap/templates/pretix_swap/presale/new.html:98
+msgid "A swap request can be ended at any time."
 msgstr ""
 
 #: pretix_swap/templates/pretix_swap/presale/new.html:108
@@ -662,11 +657,11 @@ msgid "We have canceled your request."
 msgstr ""
 
 #: pretix_swap/views.py:383
-msgid "Request a swap"
+msgid "Request a team/festival date swap"
 msgstr ""
 
 #: pretix_swap/views.py:385
-msgid "Request cancelation"
+msgid "Request to sell your ticket"
 msgstr ""
 
 #: pretix_swap/views.py:406

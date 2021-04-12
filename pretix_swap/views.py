@@ -380,9 +380,9 @@ class SwapCreate(EventViewMixin, OrderDetailMixin, FormView):
     def swap_actions(self):
         actions = []
         if self.request.event.settings.swap_orderpositions:
-            actions.append((SwapRequest.Types.SWAP, _("Request a swap")))
+            actions.append((SwapRequest.Types.SWAP, _("Request a team/festival date swap")))
         if self.request.event.settings.cancel_orderpositions:
-            actions.append((SwapRequest.Types.CANCELATION, _("Request cancelation")))
+            actions.append((SwapRequest.Types.CANCELATION, _("Request to sell your ticket")))
         return actions
 
     def get_form_kwargs(self, *args, **kwargs):

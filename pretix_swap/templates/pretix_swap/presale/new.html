@@ -89,18 +89,18 @@
         <p>
         {% if form.fields.swap_type.choices|length > 1 %}
             {% blocktrans trimmed %}
-            You can withdraw a swap request as long as no swap partner has been found for you.
+            A ticket offered for sale can not be withdrawed from the sale.
             {% endblocktrans %}
             {% blocktrans trimmed %}
-            You cannot withdraw cancelation requests – they are <b>permanent</b>.
+            A swap request can be ended at any time.
             {% endblocktrans %}
         {% elif form.fields.swap_type.choices.0.0 == "s" %}
             {% blocktrans trimmed %}
-            You can withdraw a swap request as long as no swap partner has been found for you.
+            A swap request can be ended at any time.
             {% endblocktrans %}
         {% else %}
             {% blocktrans trimmed %}
-            You cannot withdraw cancelation requests – they are <b>permanent</b>.
+            A ticket offered for sale can not be withdrawed from the sale.
             {% endblocktrans %}
         {% endif %}
         </p>

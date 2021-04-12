@@ -174,21 +174,21 @@ class SwapRequestForm(forms.Form):
         ):
             self.fields["swap_code"] = forms.CharField(
                 required=False,
-                label=_("Swap code"),
+                label=_("Direct Code"),
                 help_text=_(
-                    "Do you already know who you want to swap with? Enter their swap code here!"
+                    "Do you already know who you want to swap with? Enter their Direct Code here!"
                 ),
             )
             self.fields["swap_method"] = forms.ChoiceField(
-                label=_("Swap method"),
+                label=_("Do you want to swap your ticket:"),
                 choices=(
                     (
                         SwapRequest.Methods.FREE,
-                        _("Switch with the next interested person."),
+                        _("With the next interested person."),
                     ),
                     (
                         SwapRequest.Methods.SPECIFIC,
-                        _("I want to switch with a specific person."),
+                        _("With a specific person."),
                     ),
                 ),
             )
@@ -198,21 +198,22 @@ class SwapRequestForm(forms.Form):
         ):
             self.fields["cancel_code"] = forms.CharField(
                 required=False,
-                label=_("Cancel code"),
+                label=_("Direct Code"),
                 help_text=_(
-                    "Do you already know who should take your place? Enter their waiting list code here!"
+                    "Do you already know who should take your place? Enter their Direct Code here! "
+                    "A code will be created after you chose to swap with a specific person and once you send your swap request."
                 ),
             )
             self.fields["cancel_method"] = forms.ChoiceField(
-                label=_("Cancelation method"),
+                label=_("Do you want to sell your ticket:"),
                 choices=(
                     (
                         SwapRequest.Methods.FREE,
-                        _("Give my place to the next person in line."),
+                        _("To the next person in line."),
                     ),
                     (
                         SwapRequest.Methods.SPECIFIC,
-                        _("I want my place to go to a specific person."),
+                        _("To a specific person."),
                     ),
                 ),
             )
@@ -314,7 +315,7 @@ class SwapRequestForm(forms.Form):
         if not data:
             raise ValidationError(
                 _(
-                    "If you want to give your ticket to somebody specific, please provide a cancelation code."
+                    "If you want to sell your ticket to somebody specific, please provide a direct code."
                 )
             )
 

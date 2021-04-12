@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2021-03-09 00:14+0100\n"
+"POT-Creation-Date: 2021-04-12 19:24+0200\n"
 "PO-Revision-Date: \n"
 "Last-Translator: Tobias Kunze\n"
 "Language-Team: \n"
@@ -77,15 +77,11 @@ msgstr ""
 msgid "Please select at least one item!"
 msgstr "Bitte wähle mindestens ein Produkt aus!"
 
-#: pretix_swap/forms.py:88
-msgid "Please select at least one item on the right side!"
-msgstr ""
-
-#: pretix_swap/forms.py:103
+#: pretix_swap/forms.py:95
 msgid "You can only swap elements with the same price!"
 msgstr "Du kannst nur Produkte mit demselben Preis zum Tausch zulassen!"
 
-#: pretix_swap/forms.py:109
+#: pretix_swap/forms.py:101
 msgid ""
 "Your products include elements with different prices. Please note that "
 "cancelations will only be allowed when the new product has at least the same "
@@ -95,70 +91,80 @@ msgstr ""
 "beachte, dass Stornos nur erlaubt werden, wenn das neue Produkt mindestens "
 "denselben Preis hat wie das stornierte, sodass du kein Geld verlierst."
 
-#: pretix_swap/forms.py:157
+#: pretix_swap/forms.py:151
 msgid "Which item do you want to change?"
 msgstr "Welche Bestellposition möchtest du ändern?"
 
-#: pretix_swap/forms.py:164
+#: pretix_swap/forms.py:158
 msgid "Which product do you want instead?"
 msgstr "Welches Ticket möchtest du stattdessen?"
 
-#: pretix_swap/forms.py:174
+#: pretix_swap/forms.py:168
 msgid "What do you want to do?"
 msgstr "Was möchtest du tun?"
 
-#: pretix_swap/forms.py:183
-msgid "Swap code"
-msgstr "Tauschcode"
+#: pretix_swap/forms.py:177 pretix_swap/forms.py:201
+msgid "Direct Code"
+msgstr ""
 
-#: pretix_swap/forms.py:185
+#: pretix_swap/forms.py:179
+#, fuzzy
+#| msgid ""
+#| "Do you already know who you want to swap with? Enter their swap code here!"
 msgid ""
-"Do you already know who you want to swap with? Enter their swap code here!"
+"Do you already know who you want to swap with? Enter their Direct Code here!"
 msgstr ""
 "Möchtest du mit einer bestimmten Person tauschen? Dann trag hier ihren "
 "Tauschcode ein!"
 
-#: pretix_swap/forms.py:189
-msgid "Swap method"
-msgstr "Tauschmethode"
+#: pretix_swap/forms.py:183
+#, fuzzy
+#| msgid "How do you want to handle the ticket?"
+msgid "Do you want to swap your ticket:"
+msgstr "Was möchtest du mit dem Ticket tun?"
 
-#: pretix_swap/forms.py:193
-msgid "Switch with the next interested person."
+#: pretix_swap/forms.py:187
+#, fuzzy
+#| msgid "Switch with the next interested person."
+msgid "With the next interested person."
 msgstr "Mit der nächstbesten interessierten Person tauschen"
 
-#: pretix_swap/forms.py:197
-msgid "I want to switch with a specific person."
+#: pretix_swap/forms.py:191
+#, fuzzy
+#| msgid "I want to switch with a specific person."
+msgid "With a specific person."
 msgstr "Mit einer bestimmten Person tauschen"
 
-#: pretix_swap/forms.py:207
-msgid "Cancel code"
-msgstr "Wartelistencode"
-
-#: pretix_swap/forms.py:209
+#: pretix_swap/forms.py:203
 msgid ""
-"Do you already know who should take your place? Enter their waiting list "
-"code here!"
+"Do you already know who should take your place? Enter their Direct Code "
+"here! A code will be created after you chose to swap with a specific person "
+"and once you send your swap request."
 msgstr ""
-"Möchtest du dein Ticket an eine bestimmte Person weiterreichen? Trag hier "
-"ihren Wartelistencode ein!"
 
-#: pretix_swap/forms.py:213
-msgid "Cancelation method"
-msgstr "Stornomethode"
+#: pretix_swap/forms.py:208
+#, fuzzy
+#| msgid "How do you want to handle the ticket?"
+msgid "Do you want to sell your ticket:"
+msgstr "Was möchtest du mit dem Ticket tun?"
 
-#: pretix_swap/forms.py:217 pretix_swap/models.py:68
-msgid "Give my place to the next person in line."
+#: pretix_swap/forms.py:212
+#, fuzzy
+#| msgid "Give my place to the next person in line."
+msgid "To the next person in line."
 msgstr "Gebt mein Ticket der nächsten interessierten Person."
 
-#: pretix_swap/forms.py:221
-msgid "I want my place to go to a specific person."
-msgstr "Gebt mein Ticket einer bestimmten Person."
+#: pretix_swap/forms.py:216
+#, fuzzy
+#| msgid "I want to switch with a specific person."
+msgid "To a specific person."
+msgstr "Mit einer bestimmten Person tauschen"
 
-#: pretix_swap/forms.py:303
+#: pretix_swap/forms.py:298
 msgid "Unknown swap code!"
 msgstr "Unbekannter Tauschcode!"
 
-#: pretix_swap/forms.py:310
+#: pretix_swap/forms.py:305
 #, python-brace-format
 msgid ""
 "The swap code you entered is for the item '{other_item}', which is not "
@@ -167,19 +173,19 @@ msgstr ""
 "Der Tauschcode, den du eingetragen hast, gilt für das Produkt "
 "'{other_item}', das nicht mit deinem ('{your_item}') kompatibel ist."
 
-#: pretix_swap/forms.py:323
+#: pretix_swap/forms.py:318
 msgid ""
-"If you want to give your ticket to somebody specific, please provide a "
-"cancelation code."
+"If you want to sell your ticket to somebody specific, please provide a "
+"direct code."
 msgstr ""
-"Wenn du dein Ticket jemandem bestimmten weitergeben möchtest, gib bitten "
+"Wenn du dein Ticket jemandem bestimmten weitergeben möchtest, gib bitte "
 "einen Wartelistencode ein."
 
-#: pretix_swap/forms.py:329
+#: pretix_swap/forms.py:324
 msgid "Unknown cancelation code."
 msgstr "Unbekannter Wartelistencode."
 
-#: pretix_swap/forms.py:340
+#: pretix_swap/forms.py:335
 #, python-brace-format
 msgid ""
 "The cancelation code you entered is for the item '{other_item}', which is "
@@ -188,7 +194,7 @@ msgstr ""
 "Der Wartelistencode, den du eingegeben hast, gilt für das Produkt "
 "'{other_item}', was nicht mit deinem ('{your_item}') kompatibel ist."
 
-#: pretix_swap/forms.py:353
+#: pretix_swap/forms.py:348
 msgid "Somebody else has already requested to pass their ticket to this order."
 msgstr ""
 "Jemand anders hat sich schon gemeldet, um ein Ticket an diese Person "
@@ -224,6 +230,10 @@ msgstr ""
 "getauscht werden. Für Stornogruppen: Alle Produkte in einer Gruppe können "
 "füreinander storniert werden, solang das neue Produkt mindestens so teuer "
 "ist wie das alte."
+
+#: pretix_swap/models.py:68
+msgid "Give my place to the next person in line."
+msgstr "Gebt mein Ticket der nächsten interessierten Person."
 
 #: pretix_swap/models.py:69
 msgid "I know who to swap with."
@@ -676,20 +686,14 @@ msgid "You can request to <b>cancel</b> your order here."
 msgstr "Du kannst hier die <b>Stornierung</b> deiner Bestellung anfragen."
 
 #: pretix_swap/templates/pretix_swap/presale/new.html:91
-#: pretix_swap/templates/pretix_swap/presale/new.html:98
-msgid ""
-"You can withdraw a swap request as long as no swap partner has been found "
-"for you."
+#: pretix_swap/templates/pretix_swap/presale/new.html:102
+msgid "A ticket offered for sale can not be withdrawed from the sale."
 msgstr ""
-"Du kannst die Tauschanfrage so lange zurückziehen, wie sich kein "
-"Tauschpartner gefunden hat."
 
 #: pretix_swap/templates/pretix_swap/presale/new.html:94
-#: pretix_swap/templates/pretix_swap/presale/new.html:102
-msgid "You cannot withdraw cancelation requests – they are <b>permanent</b>."
+#: pretix_swap/templates/pretix_swap/presale/new.html:98
+msgid "A swap request can be ended at any time."
 msgstr ""
-"Eine Stornoanfrage kannst du nicht mehr zurückziehen – sie ist "
-"<b>unwiderruflich</b>."
 
 #: pretix_swap/templates/pretix_swap/presale/new.html:108
 msgid "Send request"
@@ -773,12 +777,14 @@ msgid "We have canceled your request."
 msgstr "Wir haben deine Anfrage abgebrochen."
 
 #: pretix_swap/views.py:383
-msgid "Request a swap"
-msgstr "Ticket tauschen"
+msgid "Request a team/festival date swap"
+msgstr ""
 
 #: pretix_swap/views.py:385
-msgid "Request cancelation"
-msgstr "Ticket stornieren"
+#, fuzzy
+#| msgid "Request to cancel your order: %(code)s"
+msgid "Request to sell your ticket"
+msgstr "Stornoanfrage für deine Bestellung %(code)s"
 
 #: pretix_swap/views.py:406
 msgid "We received your request and matched you directly!"
@@ -800,3 +806,44 @@ msgid ""
 msgstr ""
 "Wir haben deine Anfrage erhalten. Sobald jemand deinen Tauschcode eingibt, "
 "kann der Ablauf weitergehen. Wir werden dich dann benachrichtigen."
+
+#~ msgid "Swap code"
+#~ msgstr "Tauschcode"
+
+#~ msgid "Swap method"
+#~ msgstr "Tauschmethode"
+
+#~ msgid "Cancel code"
+#~ msgstr "Wartelistencode"
+
+#~ msgid ""
+#~ "Do you already know who should take your place? Enter their waiting list "
+#~ "code here!"
+#~ msgstr ""
+#~ "Möchtest du dein Ticket an eine bestimmte Person weiterreichen? Trag hier "
+#~ "ihren Wartelistencode ein!"
+
+#~ msgid "Cancelation method"
+#~ msgstr "Stornomethode"
+
+#~ msgid "I want my place to go to a specific person."
+#~ msgstr "Gebt mein Ticket einer bestimmten Person."
+
+#~ msgid ""
+#~ "You can withdraw a swap request as long as no swap partner has been found "
+#~ "for you."
+#~ msgstr ""
+#~ "Du kannst die Tauschanfrage so lange zurückziehen, wie sich kein "
+#~ "Tauschpartner gefunden hat."
+
+#~ msgid ""
+#~ "You cannot withdraw cancelation requests – they are <b>permanent</b>."
+#~ msgstr ""
+#~ "Eine Stornoanfrage kannst du nicht mehr zurückziehen – sie ist "
+#~ "<b>unwiderruflich</b>."
+
+#~ msgid "Request a swap"
+#~ msgstr "Ticket tauschen"
+
+#~ msgid "Request cancelation"
+#~ msgstr "Ticket stornieren"
