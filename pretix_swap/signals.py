@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.dispatch import receiver
 from django.template.loader import get_template
 from django.urls import resolve, reverse
@@ -16,6 +17,7 @@ BOOLEAN_SETTINGS = [
 
 for settings_name in BOOLEAN_SETTINGS:
     settings_hierarkey.add_default(settings_name, "False", bool)
+settings_hierarkey.add_default("swap_cancellation_fee", "0.00", Decimal)
 
 
 @receiver(nav_event_settings, dispatch_uid="swap_nav_settings")

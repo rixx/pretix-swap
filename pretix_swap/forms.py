@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django import forms
 from django.contrib import messages
 from django.core.exceptions import ValidationError
@@ -42,6 +43,16 @@ class SwapSettingsForm(SettingsForm):
             "Users can enter a code to hand their ticket to somebody specific."
         ),
     )
+    swap_cancellation_fee = forms.DecimalField(
+        required=False,
+        max_digits=10,
+        decimal_places=2,
+        localize=True,
+        label=_("Keep a cancellation fee of"),
+        help_text=_(
+            "Please always enter a gross value, tax will be calculated automatically."
+        ),
+    )
 
     def __init__(self, *args, **kwargs):
         self.event = kwargs.get("obj")
@@ -53,6 +64,10 @@ class SwapSettingsForm(SettingsForm):
             data["swap_orderpositions_specific"] = False
         if not data.get("cancel_orderpositions"):
             data["cancel_orderpositions_specific"] = False
+
+    def clean_cancellation_fee(self):
+        val = self.cleaned_data["cancellation_fee"] or Decimal("0.00")
+        return val
 
 
 class ItemModelMultipleChoiceField(SafeModelMultipleChoiceField):

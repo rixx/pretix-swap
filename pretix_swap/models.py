@@ -269,7 +269,10 @@ class SwapRequest(models.Model):
             change_manager.cancel(position=self.position)
             change_manager.commit()
         except OrderError:  # Let's hope this order error is because we're trying to empty the order
-            cancel_order(self.position.order.pk)
+            cancel_order(
+                self.position.order.pk,
+                cancellation_fee=self.event.settings.swap_cancellation_fee,
+            )
         self.state = self.States.COMPLETED
         self.target_order = other  # Should be set already, let's just make sure
         self.save()
