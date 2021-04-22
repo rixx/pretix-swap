@@ -322,6 +322,12 @@ class SwapRequestForm(forms.Form):
                     )
                 ).format(other_item=partner.position.item, your_item=position.item)
             )
+        if partner.position.subevent == position.subevent:
+            raise ValidationError(
+                _(
+                    "The swap code you entered is for the same event date as your ticket."
+                )
+            )
         self.partner = partner
         return partner
 
