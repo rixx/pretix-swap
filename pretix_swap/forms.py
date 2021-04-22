@@ -43,6 +43,13 @@ class SwapSettingsForm(SettingsForm):
             "Users can enter a code to hand their ticket to somebody specific."
         ),
     )
+    cancel_orderpositions_verified_only = forms.BooleanField(
+        label=_("Require verified email for cancellations"),
+        required=False,
+        help_text=_(
+            "Allow customers to request to cancel orderpositions only with a known-to-work email address"
+        ),
+    )
     swap_cancellation_fee = forms.DecimalField(
         required=False,
         max_digits=10,

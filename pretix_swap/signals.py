@@ -13,6 +13,7 @@ BOOLEAN_SETTINGS = [
     "swap_orderpositions_specific",
     "cancel_orderpositions",
     "cancel_orderpositions_specific",
+    "cancel_orderpositions_verified_only",
 ]
 
 for settings_name in BOOLEAN_SETTINGS:

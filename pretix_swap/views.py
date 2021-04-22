@@ -65,18 +65,20 @@ class SwapStats(EventPermissionRequiredMixin, FormView):
             to_approve = data.get(f"item_{row['item'].pk}")
             if not approvable or not to_approve:
                 continue
-            positions = (
-                OrderPosition.objects.filter(
-                    order__status="n",  # Pending orders with and without approval
-                    order__event=self.request.event,
-                    order__require_approval=True,
-                    item=row["item"],
-                )
-                .annotate(has_request=Count("order__cancelation_request"))
-                .order_by(
-                    "-has_request",
-                    "order__datetime",
-                )
+            positions = OrderPosition.objects.filter(
+                order__status="n",  # Pending orders with and without approval
+                order__event=self.request.event,
+                order__require_approval=True,
+                item=row["item"],
+            )
+            if self.request.event.settings.cancel_orderpositions_verified_only:
+                positions = positions.filter(order__email_known_to_work=True)
+
+            positions = positions.annotate(
+                has_request=Count("order__cancelation_request")
+            ).order_by(
+                "-has_request",
+                "order__datetime",
             )  # Ones with matching requests first, then oldest
             orders_approved += self.approve_orders(positions, to_approve)
 
