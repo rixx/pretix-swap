@@ -5,7 +5,7 @@ from django.urls import resolve, reverse
 from django.utils.translation import gettext_lazy as _
 from pretix.base.settings import settings_hierarkey
 from pretix.base.signals import logentry_display, logentry_object_link, order_paid
-from pretix.control.signals import nav_event, nav_event_settings
+from pretix.control.signals import nav_event, nav_event_settings, order_search_forms
 from pretix.presale.signals import order_info, order_info_top
 
 BOOLEAN_SETTINGS = [
@@ -306,3 +306,10 @@ def swap_order_paid(order, sender, *args, **kwargs):
                     "pretix_swap.cancelation.cancelation_failed",
                     data={"detail": str(e)},
                 )
+
+
+@receiver(order_search_forms)
+def register_order_search_forms(request, sender, **kwargs):
+    from .forms import OrderSearchForm
+
+    return OrderSearchForm(request.GET, event=sender, prefix="swap")

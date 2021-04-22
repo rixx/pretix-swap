@@ -2,6 +2,7 @@ from decimal import Decimal
 from django import forms
 from django.contrib import messages
 from django.core.exceptions import ValidationError
+from django.db.models import Exists, OuterRef
 from django.utils.translation import gettext_lazy as _
 from django_scopes.forms import SafeModelMultipleChoiceField
 from i18nfield.forms import I18nModelForm
@@ -390,3 +391,140 @@ class CancelationForm(forms.Form):
                 required=False,
                 label="",
             )
+
+
+class OrderSearchForm(forms.Form):
+    swap_requests = forms.ChoiceField(
+        required=False,
+        label=_("Swap requests"),
+        choices=(
+            ("", "--------"),
+            ("1", _("Has open swap request")),
+            ("2", _("Has finalized swap request")),
+            ("3", _("Has open or finalized swap request")),
+            ("4", _("Has no swap requests")),
+        ),
+    )
+    cancellation_requests = forms.ChoiceField(
+        required=False,
+        label=_("Cancellation requests"),
+        choices=(
+            ("", "--------"),
+            ("1", _("Has open cancellation request")),
+            ("2", _("Has finalized cancellation request")),
+            ("3", _("Has open or finalized cancellation request")),
+            ("4", _("Has no cancellation requests")),
+        ),
+    )
+
+    def __init__(self, *args, event=None, **kwargs):
+        self.event = event
+        super().__init__(*args, **kwargs)
+
+    def filter_qs(self, queryset):
+        swaps = self.cleaned_data.get("swap_requests")
+        cancels = self.cleaned_data.get("cancellation_requests")
+        if swaps:
+            if swaps == "4":
+                queryset = queryset.exclude(
+                    Exists(
+                        SwapRequest.objects.filter(
+                            position__order_id=OuterRef("pk"),
+                            swap_type=SwapRequest.Types.SWAP,
+                        )
+                    )
+                )
+            elif swaps == "1":
+                queryset = queryset.filter(
+                    Exists(
+                        SwapRequest.objects.filter(
+                            position__order_id=OuterRef("pk"),
+                            swap_type=SwapRequest.Types.SWAP,
+                            state=SwapRequest.States.REQUESTED,
+                        )
+                    )
+                )
+            elif swaps == "2":
+                queryset = queryset.filter(
+                    Exists(
+                        SwapRequest.objects.filter(
+                            position__order_id=OuterRef("pk"),
+                            swap_type=SwapRequest.Types.SWAP,
+                            state=SwapRequest.States.COMPLETED,
+                        )
+                    )
+                )
+            elif swaps == "3":
+                queryset = queryset.filter(
+                    Exists(
+                        SwapRequest.objects.filter(
+                            position__order_id=OuterRef("pk"),
+                            swap_type=SwapRequest.Types.SWAP,
+                        )
+                    )
+                )
+
+        if cancels:
+            if cancels == "4":
+                queryset = queryset.exclude(
+                    Exists(
+                        SwapRequest.objects.filter(
+                            position__order_id=OuterRef("pk"),
+                            swap_type=SwapRequest.Types.CANCELATION,
+                        )
+                    )
+                )
+            elif cancels == "1":
+                queryset = queryset.filter(
+                    Exists(
+                        SwapRequest.objects.filter(
+                            position__order_id=OuterRef("pk"),
+                            swap_type=SwapRequest.Types.CANCELATION,
+                            state=SwapRequest.States.REQUESTED,
+                        )
+                    )
+                )
+            elif cancels == "2":
+                queryset = queryset.filter(
+                    Exists(
+                        SwapRequest.objects.filter(
+                            position__order_id=OuterRef("pk"),
+                            swap_type=SwapRequest.Types.CANCELATION,
+                            state=SwapRequest.States.COMPLETED,
+                        )
+                    )
+                )
+            elif cancels == "3":
+                queryset = queryset.filter(
+                    Exists(
+                        SwapRequest.objects.filter(
+                            position__order_id=OuterRef("pk"),
+                            swap_type=SwapRequest.Types.CANCELATION,
+                        )
+                    )
+                )
+        return queryset
+
+    def filter_to_strings(self):
+        swaps = self.cleaned_data.get("swap_requests")
+        cancels = self.cleaned_data.get("cancellation_requests")
+        result = []
+        swap_string = {
+            "": "",
+            "1": _("Orders with open swap requests"),
+            "2": _("Orders with finalized swap requests"),
+            "3": _("Orders with open or finalized swap requests"),
+            "4": _("Orders without swap requests"),
+        }[swaps]
+        cancel_string = {
+            "": "",
+            "1": _("Orders with open cancellation requests"),
+            "2": _("Orders with finalized cancellation requests"),
+            "3": _("Orders with open or finalized cancellation requests"),
+            "4": _("Orders without cancellation requests"),
+        }[cancels]
+        if swap_string:
+            result.append(swap_string)
+        if cancel_string:
+            result.append(cancel_string)
+        return result
