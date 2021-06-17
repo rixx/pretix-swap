@@ -294,6 +294,7 @@ class SwapRequest(models.Model):
             cancel_order(
                 self.position.order.pk,
                 cancellation_fee=self.event.settings.swap_cancellation_fee,
+                try_auto_refund=True,
             )
         self.state = self.States.COMPLETED
         self.target_order = other  # Should be set already, let's just make sure
