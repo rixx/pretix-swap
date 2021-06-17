@@ -30,11 +30,18 @@ class SwapGroup(models.Model):
         related_name="+",
         verbose_name=_("Products"),
         help_text=_(
-            ""
-            "For swap groups: All products selected can be swapped with one another. "
-            "For cancel groups: All products selected can be canceled in favour of one another, "
-            "as long as the new product is as least as expensive as the old one."
+            "Settings apply to all selected items. Every swap or cancelation can only take "
+            "place with the exact same item in both orders. For swaps, the event date is "
+            "the only difference, for cancelations, even the event date needs to be the same. "
+            "Leave empty to permit all items."
         ),
+    )
+    subevents = models.ManyToManyField(
+        "pretixbase.SubEvent",
+        blank=True,
+        related_name="+",
+        verbose_name=_("Subevents"),
+        help_text=_("For swaps, tickets can be swapped between all selected events."),
     )
 
     objects = ScopedManager(organizer="event__organizer")
@@ -49,7 +56,7 @@ def generate_swap_code():
 class SwapApproval(models.Model):
     order = models.OneToOneField(
         "pretixbase.Order", related_name="swap_approval", on_delete=models.CASCADE
-    )
+    )  # TODO: move to OrderPosition once we have multiple tickets per order, and change `approve_orders()`
     approved_for_cancelation_request = models.BooleanField(
         default=True
     )  # Currently always True
@@ -82,19 +89,18 @@ class SwapRequest(models.Model):
     position = models.ForeignKey(
         "pretixbase.OrderPosition", related_name="swap_states", on_delete=models.CASCADE
     )
-    target_item = models.ForeignKey(  # Used on free (unspecific) swap requests
-        "pretixbase.Item",
+    target_subevent = models.ForeignKey(
+        "pretixbase.SubEvent",
         related_name="+",
         on_delete=models.CASCADE,
-        null=True,
+        null=True,  # Only nullable for legacy reasons, should never be null
     )
-    target_order = (
-        models.ForeignKey(  # Used on specific (non-free) cancelation requests
-            "pretixbase.Order",
-            related_name="cancelation_request",
-            on_delete=models.CASCADE,
-            null=True,
-        )
+    # WARNING: this works only as long as the waiting list allows only one item per pending order  # Used on specific (non-free) cancelation requests
+    target_order = models.ForeignKey(
+        "pretixbase.Order",
+        related_name="cancelation_request",
+        on_delete=models.CASCADE,
+        null=True,
     )
     partner = models.ForeignKey(  # Only set on completed swaps. Not used except for auditability.
         "self",
@@ -146,47 +152,49 @@ class SwapRequest(models.Model):
         return texts[(self.swap_type, self.state, self.swap_method)]
 
     def swap_with(self, other):
-        self.refresh_from_db()
-        other.refresh_from_db()
-
         if not self.event.settings.swap_orderpositions:
             raise Exception("Order position swapping is currently not allowed")
 
         my_item = self.position.item
         my_variation = self.position.variation
+        my_subevent = self.position.subevent
         other_item = other.position.item
         other_variation = other.position.variation
-        # TODO maybe notify=False, our own notification
+        other_subevent = other.position.subevent
+
+        if not (my_item == other_item):
+            raise Exception(f"Items do not match: {my_item} vs {other_item}.")
+        if not (my_variation == other_variation):
+            raise Exception(
+                f"Item variations do not match: {my_variation} vs {other_variation}."
+            )
+        if my_subevent == other_subevent:
+            raise Exception("Can't swap within the same subevent.")
+        if not can_be_swapped(self.event, my_item, my_subevent, other_subevent):
+            raise Exception("This swap is currently not allowed.")
+
         my_change_manager = OrderChangeManager(order=self.position.order)
         other_change_manager = OrderChangeManager(order=other.position.order)
 
         # Make sure AGAIN that the state is alright, because timings
+        self.refresh_from_db()
+        other.refresh_from_db()
         if self.state != self.States.REQUESTED or other.state != self.States.REQUESTED:
             raise Exception("Both requests have to be in the 'requesting' state.")
         if not self.position.price == other.position.price:
             raise Exception("Both requests have to have the same price.")
-        if self.target_item and other.position.item != self.target_item:
-            raise Exception("Incompatible item!")
-        if self.position.subevent == other.position.subevent:
-            my_change_manager.change_item(
-                position=self.position, item=other_item, variation=other_variation
-            )
-            other_change_manager.change_item(
-                position=other.position, item=my_item, variation=my_variation
-            )
-        else:
-            my_change_manager.change_item_and_subevent(
-                position=self.position,
-                item=other_item,
-                variation=other_variation,
-                subevent=other.position.subevent,
-            )
-            other_change_manager.change_item_and_subevent(
-                position=other.position,
-                item=my_item,
-                variation=my_variation,
-                subevent=self.position.subevent,
-            )
+        my_change_manager.change_item_and_subevent(
+            position=self.position,
+            item=my_item,
+            variation=my_variation,
+            subevent=other_subevent,
+        )
+        other_change_manager.change_item_and_subevent(
+            position=other.position,
+            item=my_item,
+            variation=my_variation,
+            subevent=my_subevent,
+        )
         my_change_manager.commit()
         other_change_manager.commit()
         self.state = self.States.COMPLETED
@@ -225,40 +233,42 @@ class SwapRequest(models.Model):
         if self.swap_method != self.Methods.FREE:
             return
 
-        from .utils import get_swappable_items
-
-        # TODO validate that the items are compatible with target_item
-        items = get_swappable_items(self.position.item)
-        if self.target_item:
-            if self.target_item not in items:
-                raise Exception("Target item not allowed")
-            items = [self.target_item]
-        other = (
-            SwapRequest.objects.filter(
-                models.Q(target_item__isnull=True)
-                | models.Q(target_item=self.position.item),
-                state=SwapRequest.States.REQUESTED,
-                swap_method=SwapRequest.Methods.FREE,
-                swap_type=SwapRequest.Types.SWAP,
-                position__order__event_id=self.event.pk,
-                position__item__in=items,
-                partner__isnull=True,
-            )
-            .exclude(pk=self.pk)
-            .first()
+        item = self.position.item
+        variation = self.position.variation
+        other = SwapRequest.objects.filter(
+            position__order__event_id=self.event.pk,
+            state=SwapRequest.States.REQUESTED,
+            swap_method=SwapRequest.Methods.FREE,
+            swap_type=SwapRequest.Types.SWAP,
+            partner__isnull=True,
+            target_subevent=self.position.subevent,
+            position__subevent=self.target_subevent,
+            position__item=item,
         )
+        if variation:
+            other = other.filter(position__variation=variation)
+
+        other = other.exclude(pk=self.pk).first()
         if other:
             self.swap_with(other)
 
     def cancel_for(self, other):
-        """Called when an oder is marked as paid."""
+        """Called when an order is marked as paid. Makes sure that item, variation and subevent match before calling this method."""
 
         if not self.event.settings.cancel_orderpositions:
             raise Exception("Order position canceling is currently not allowed")
 
-        # TODO maybe notify=False, our own notification
+        if (
+            self.position.subevent != other.position.subevent
+            or self.position.item != other.position.item
+            or self.position.variation != other.position.variation
+        ):
+            raise Exception("Cancelation failed, orders are not equal")
+        if not can_be_canceled(self.event, self.position.item, self.position.subevent):
+            raise Exception("Cancelation failed, currently not allowed")
 
         # Make sure AGAIN that the state is alright, because timings
+        self.refresh_from_db()
         if not self.state == self.States.REQUESTED:
             raise Exception("Not in 'requesting' state.")
         if self.position.price > other.price:
