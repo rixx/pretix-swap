@@ -124,13 +124,17 @@ class SwapRequest(models.Model):
 
     def get_notification(self):
         texts = {
-            (self.Types.SWAP, self.States.REQUESTED, self.Methods.FREE): str(_(
-                "You have requested to swap this product. Please wait until somebody with a matching ticket ({self.target_subevent}) requests a matching swap."
-            )).format(self=self),
-            (self.Types.SWAP, self.States.REQUESTED, self.Methods.SPECIFIC,): str(_(
-                "You have requested to swap this product with somebody specific ({self.target_subevent}). "
-                "Please wait until they enter the swap code that you have given them."
-            )).fomat(self=self),
+            (self.Types.SWAP, self.States.REQUESTED, self.Methods.FREE): str(
+                _(
+                    "You have requested to swap this product. Please wait until somebody with a matching ticket ({self.target_subevent}) requests a matching swap."
+                )
+            ).format(self=self),
+            (self.Types.SWAP, self.States.REQUESTED, self.Methods.SPECIFIC,): str(
+                _(
+                    "You have requested to swap this product with somebody specific ({self.target_subevent}). "
+                    "Please wait until they enter the swap code that you have given them."
+                )
+            ).fomat(self=self),
             (self.Types.SWAP, self.States.COMPLETED, self.Methods.FREE): _(
                 "You have completed the swap of this product."
             ),
@@ -256,7 +260,11 @@ class SwapRequest(models.Model):
             self.swap_with(other)
 
     def cancel_for(self, other):
-        """Called when an order is marked as paid. Makes sure that item, variation and subevent match before calling this method."""
+        """Called when an order is marked as paid.
+
+        Makes sure that item, variation and subevent match before
+        calling this method.
+        """
 
         if not self.event.settings.cancel_orderpositions:
             raise Exception("Order position canceling is currently not allowed")

@@ -183,6 +183,7 @@ class SwapWizardTypeForm(forms.Form):
 
 class SwapWizardDetailsForm(forms.Form):
     """Can contain some of these fields:
+
     - method (depending on swap_type and allowed actions)
     - target_order (when the type is cancel, will only show when the non-free method is chosen)
     - swap_code (when the type is swap, will only show when the non-free method is chosen)

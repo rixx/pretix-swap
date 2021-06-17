@@ -103,8 +103,8 @@ def get_cancelable_subevents(item, groups=None):
 def match_open_swap_requests(event):
     """Can be used in admin actions and runperiodic.
 
-    Attempts to find matches for all open requests. Shouldn't be many, usually these will get
-    caught on request creation.
+    Attempts to find matches for all open requests. Shouldn't be many,
+    usually these will get caught on request creation.
     """
     from .models import SwapRequest
 
