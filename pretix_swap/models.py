@@ -126,7 +126,8 @@ class SwapRequest(models.Model):
         texts = {
             (self.Types.SWAP, self.States.REQUESTED, self.Methods.FREE): str(
                 _(
-                    "You have requested to swap this product. Please wait until somebody with a matching ticket ({self.target_subevent}) requests a matching swap."
+                    "You have requested to swap this product. Please wait until somebody with a "
+                    "matching ticket ({self.target_subevent}) requests a matching swap."
                 )
             ).format(self=self),
             (self.Types.SWAP, self.States.REQUESTED, self.Methods.SPECIFIC,): str(
