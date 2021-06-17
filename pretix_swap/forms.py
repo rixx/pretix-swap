@@ -7,10 +7,10 @@ from django.utils.translation import gettext_lazy as _
 from django_scopes.forms import SafeModelMultipleChoiceField
 from i18nfield.forms import I18nModelForm
 from pretix.base.forms import SettingsForm
-from pretix.base.models import Item
+from pretix.base.models import Item, SubEvent
 
 from .models import SwapGroup, SwapRequest
-from .utils import get_applicable_items, get_cancelable_items, get_swappable_items
+from .utils import get_target_subevents, get_valid_swap_types
 
 
 class SwapSettingsForm(SettingsForm):
@@ -93,6 +93,7 @@ class SwapGroupForm(I18nModelForm):
         kwargs["locales"] = self.event.settings.locales if self.event else ["en"]
         super().__init__(*args, **kwargs)
         self.fields["items"].queryset = Item.objects.filter(event=event)
+        self.fields["subevents"].queryset = SubEvent.objects.filter(event=event)
 
     def save(self, *args, **kwargs):
         self.instance.event = self.event
@@ -134,9 +135,11 @@ class SwapGroupForm(I18nModelForm):
             "name",
             "swap_type",
             "items",
+            "subevents",
         )
         field_classes = {
             "items": ItemModelMultipleChoiceField,
+            "subevents": SafeModelMultipleChoiceField,
         }
 
 
@@ -150,58 +153,51 @@ class PositionModelChoiceField(forms.ModelChoiceField):
         return label
 
 
-class SwapRequestForm(forms.Form):
-    def __init__(self, *args, order=None, swap_actions=None, **kwargs):
+class SwapWizardPositionForm(forms.Form):
+    def __init__(self, *args, order, **kwargs):
         self.order = order
-        self.event = order.event
-        initial_position = kwargs.pop("position", None)
         super().__init__(*args, **kwargs)
-        items = get_applicable_items(self.event)
         relevant_positions = [
             position
             for position in order.positions.all()
-            if position.item in items
-            and (
-                all(
-                    state.state == SwapRequest.States.COMPLETED
-                    for state in position.swap_states.all()
-                )
-            )
+            if get_valid_swap_types(position)
         ]
         self.fields["position"] = PositionModelChoiceField(
             self.order.positions.filter(pk__in=[p.pk for p in relevant_positions]),
-            initial=initial_position,
             label=_("Which item do you want to change?"),
+            widget=forms.RadioSelect,
         )
-        for position in relevant_positions:
-            field = forms.ModelChoiceField(
-                Item.objects.filter(
-                    pk__in=[item.pk for item in get_swappable_items(position.item)]
-                ),
-                label=_("Which product do you want instead?"),
-                required=False,
-                initial=None,
-            )
-            field.position = position
-            self.fields[f"position_choice_{position.pk}"] = field
 
+
+class SwapWizardTypeForm(forms.Form):
+    def __init__(self, *args, swap_types, **kwargs):
+        super().__init__(*args, **kwargs)
         self.fields["swap_type"] = forms.ChoiceField(
-            initial=swap_actions[0],
-            choices=swap_actions,
+            initial=swap_types[0],
+            choices=swap_types,
             label=_("What do you want to do?"),
             required=True,
+            widget=forms.RadioSelect,
         )
+
+
+class SwapWizardDetailsForm(forms.Form):
+    """Can contain some of these fields:
+    - method (depending on swap_type and allowed actions)
+    - target_order (when the type is cancel, will only show when the non-free method is chosen)
+    - swap_code (when the type is swap, will only show when the non-free method is chosen)
+    - target_subevent (always present)
+    """
+
+    def __init__(self, *args, position, swap_type, **kwargs):
+        self.position = position
+        self.swap_type = swap_type
+        self.event = position.order.event
+        super().__init__(*args, **kwargs)
         if (
-            any(SwapRequest.Types.SWAP == action[0] for action in swap_actions)
+            swap_type == SwapRequest.Types.SWAP
             and self.event.settings.swap_orderpositions_specific
         ):
-            self.fields["swap_code"] = forms.CharField(
-                required=False,
-                label=_("Direct Code"),
-                help_text=_(
-                    "Do you already know who you want to swap with? Enter their Direct Code here!"
-                ),
-            )
             self.fields["swap_method"] = forms.ChoiceField(
                 label=_("Do you want to swap your ticket:"),
                 choices=(
@@ -215,19 +211,18 @@ class SwapRequestForm(forms.Form):
                     ),
                 ),
             )
-        if (
-            any(SwapRequest.Types.CANCELATION == action[0] for action in swap_actions)
-            and self.event.settings.cancel_orderpositions_specific
-        ):
-            self.fields["cancel_code"] = forms.CharField(
+            self.fields["swap_code"] = forms.CharField(
                 required=False,
                 label=_("Direct Code"),
                 help_text=_(
-                    "Do you already know who should take your place? Enter their Direct Code here! "
-                    "A code will be created after you chose to swap with a specific person and once you send your swap request."
+                    "Do you already know who you want to swap with? Enter their Direct Code here!"
                 ),
             )
-            self.fields["cancel_method"] = forms.ChoiceField(
+        elif (
+            swap_type == SwapRequest.Types.CANCELATION
+            and self.event.settings.cancel_orderpositions_specific
+        ):
+            self.fields["swap_method"] = forms.ChoiceField(
                 label=_("Do you want to sell your ticket:"),
                 choices=(
                     (
@@ -240,75 +235,43 @@ class SwapRequestForm(forms.Form):
                     ),
                 ),
             )
-
-    @property
-    def position_fields(self):
-        return [
-            self[name]
-            for name in self.fields.keys()
-            if name.startswith("position_choice_")
-        ]
-
-    def save(self):
-        data = self.cleaned_data
-        swap_type = data.get("swap_type")
-        swap_method = (
-            data.get("cancel_method")
-            if swap_type == SwapRequest.Types.CANCELATION
-            else data.get("swap_method")
-        )
-        instance = SwapRequest.objects.create(
-            position=data["position"],
-            target_item=data.get(f"position{data['position'].pk}"),
-            target_order=data.get("cancel_code"),
-            state=SwapRequest.States.REQUESTED,
-            swap_type=swap_type,
-            swap_method=swap_method or SwapRequest.Methods.FREE,
-        )
-        instance.position.order.log_action(
-            "pretix_swap.swap.request",
-            data={
-                "position": instance.position.pk,
-                "positionid": instance.position.positionid,
-                "swap_type": instance.swap_type,
-                "swap_method": instance.swap_method,
-            },
-        )
-        if instance.swap_type == SwapRequest.Types.SWAP:  # Only swaps are instantaneous
-            if data.get("swap_code"):
-                instance.swap_with(data.get("swap_code"))
-            elif instance.swap_method == SwapRequest.Methods.FREE:
-                instance.attempt_swap()
-        elif instance.target_order:
-            instance.target_order.log_action(
-                "pretix_swap.cancelation.offer_created",
-                data={
-                    "other_order": instance.position.order.code,
-                    "other_position": instance.position.id,
-                    "other_positionid": instance.position.positionid,
-                },
+            self.fields["cancel_code"] = forms.CharField(
+                required=False,
+                label=_("Direct Code"),
+                help_text=_(
+                    "Do you already know who should take your place? Enter their Direct Code here! "
+                    "A code will be created after you chose to swap with a specific person and once you send your swap request."
+                ),
             )
-        return instance
+        self.fields["target_subevent"] = forms.ModelChoiceField(
+            required=True,
+            label=_("Date"),
+            queryset=get_target_subevents(self.position, self.swap_type),
+            widget=forms.RadioSelect,
+            empty_label=None,
+        )
 
     def clean(self):
         cleaned_data = super().clean()
         if (
-            cleaned_data["swap_type"] == SwapRequest.Types.SWAP
+            "swap_code" in self.fields
             and cleaned_data.get("swap_method") == SwapRequest.Methods.SPECIFIC
         ):
-            cleaned_data["swap_code"] = self._clean_swap_code()
+            cleaned_data["swap_code"] = self._clean_swap_code(
+                subevent=cleaned_data.get("target_subevent")
+            )
         else:
             cleaned_data["swap_code"] = None
         if (
-            cleaned_data["swap_type"] == SwapRequest.Types.CANCELATION
-            and cleaned_data.get("cancel_method") == SwapRequest.Methods.SPECIFIC
+            "cancel_code" in self.fields
+            and cleaned_data.get("swap_method") == SwapRequest.Methods.SPECIFIC
         ):
             cleaned_data["cancel_code"] = self._clean_cancel_code()
         else:
             cleaned_data["cancel_code"] = None
         return cleaned_data
 
-    def _clean_swap_code(self):
+    def _clean_swap_code(self, subevent):
         data = self.cleaned_data.get("swap_code")
         if not data:
             return data
@@ -319,22 +282,29 @@ class SwapRequestForm(forms.Form):
         ).first()
         if not partner:
             raise ValidationError(_("Unknown swap code!"))
-        position = self.cleaned_data.get("position")
-        items = get_swappable_items(position.item)
-        if partner.position.item not in items:
+        if (partner.position.item != self.position.item) or (
+            partner.position.variation != self.position.variation
+        ):
             raise ValidationError(
                 str(
                     _(
-                        "The swap code you entered is for the item '{other_item}', "
-                        "which is not compatible with your item '{your_item}'."
+                        "The swap code you entered is for a different ticket than yours. You can only swap with the same ticket type."
                     )
-                ).format(other_item=partner.position.item, your_item=position.item)
+                )
             )
-        if partner.position.subevent == position.subevent:
+        if partner.position.subevent == self.position.subevent:
             raise ValidationError(
                 _(
                     "The swap code you entered is for the same event date as your ticket."
                 )
+            )
+        if partner.position.subevent != subevent:
+            raise ValidationError(
+                str(
+                    _(
+                        "The swap code you entered is for a different date than you selected: {subevent}."
+                    )
+                ).format(subevent=partner.position.subevent)
             )
         self.partner = partner
         return partner
@@ -352,20 +322,26 @@ class SwapRequestForm(forms.Form):
         if not order:
             raise ValidationError(_("Unknown cancelation code."))
 
-        position = self.cleaned_data.get("position")
-        items = get_cancelable_items(position.item)
         other_position = (
             order.positions.first()
-        )  # TODO we just assume that this order has only one position
-        if other_position.item not in items:
+        )  # TODO we just assume that this pending order has only one position
+        if other_position.item != self.position.item:
             raise ValidationError(
                 str(
                     _(
-                        "The cancelation code you entered is for the item '{other_item}', "
-                        "which is not compatible with your item '{your_item}'."
+                        "The cancelation code you entered is for a different ticket type than yours."
                     )
-                ).format(other_item=other_position.item, your_item=position.item)
+                )
             )
+        if other_position.subevent != self.position.subevent:
+            raise ValidationError(
+                str(
+                    _(
+                        "The cancelation code you entered is for a ticket on a different date than yours."
+                    )
+                )
+            )
+
         if SwapRequest.objects.filter(
             target_order=order,
             state=SwapRequest.States.REQUESTED,
@@ -378,6 +354,10 @@ class SwapRequestForm(forms.Form):
                 )
             )
         return order
+
+
+class SwapWizardConfirmForm(forms.Form):
+    pass
 
 
 class CancelationForm(forms.Form):

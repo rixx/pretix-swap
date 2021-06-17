@@ -13,6 +13,7 @@ from django.views.generic import (
     TemplateView,
     UpdateView,
 )
+from formtools.wizard.views import SessionWizardView
 from pretix.base.models.event import Event
 from pretix.base.models.orders import OrderPosition
 from pretix.base.services.orders import OrderError, approve_order
@@ -22,8 +23,17 @@ from pretix.multidomain.urlreverse import eventreverse
 from pretix.presale.views import EventViewMixin
 from pretix.presale.views.order import OrderDetailMixin
 
-from .forms import CancelationForm, SwapGroupForm, SwapRequestForm, SwapSettingsForm
+from .forms import (
+    CancelationForm,
+    SwapGroupForm,
+    SwapSettingsForm,
+    SwapWizardConfirmForm,
+    SwapWizardDetailsForm,
+    SwapWizardPositionForm,
+    SwapWizardTypeForm,
+)
 from .models import SwapApproval, SwapGroup, SwapRequest
+from .utils import get_valid_swap_types
 
 
 class SwapStats(EventPermissionRequiredMixin, FormView):
@@ -369,44 +379,120 @@ class SwapCancel(EventViewMixin, OrderDetailMixin, TemplateView):
         )
 
 
-class SwapCreate(EventViewMixin, OrderDetailMixin, FormView):
-    template_name = "pretix_swap/presale/new.html"
-    form_class = SwapRequestForm
+def condition_position(wizard):
+    return len(wizard.order.positions.all()) > 1
+
+
+def condition_type(wizard):
+    actions = get_valid_swap_types(wizard.position)
+    return len(actions) > 1
+
+
+class SwapCreate(EventViewMixin, OrderDetailMixin, SessionWizardView):
+
+    form_list = [
+        ("position", SwapWizardPositionForm),
+        ("type", SwapWizardTypeForm),
+        (
+            "details",
+            SwapWizardDetailsForm,
+        ),  # contains swap method if possible, swap code, subevent always
+        ("confirm", SwapWizardConfirmForm),
+    ]
+    condition_dict = {
+        "position": condition_position,
+        "type": condition_type,
+    }
+
+    @cached_property
+    def position(self):
+        positions = self.order.positions.all()
+        if len(positions) == 1:
+            return positions.first()
+        try:
+            return self.get_cleaned_data_for_step("position").get("position")
+        except Exception:  # not filled in or not valid
+            return None
+
+    @cached_property
+    def swap_type(self):
+        actions = get_valid_swap_types(self.position)
+        if len(actions) == 1:
+            return actions[0]
+        try:
+            return self.get_cleaned_data_for_step("type").get("swap_type")
+        except Exception:  # not filled in or not valid
+            return None
 
     def dispatch(self, request, *args, **kwargs):
-        if not self.swap_actions or not self.order.status == "p":
+        if not self.order.status == "p":
             raise Http404()
         return super().dispatch(request, *args, **kwargs)
 
-    @cached_property
-    def swap_actions(self):
-        actions = []
-        if self.request.event.settings.swap_orderpositions:
-            actions.append(
-                (SwapRequest.Types.SWAP, _("Request a team/festival date swap"))
-            )
-        if self.request.event.settings.cancel_orderpositions:
-            actions.append(
-                (SwapRequest.Types.CANCELATION, _("Request to sell your ticket"))
-            )
-        return actions
-
-    def get_form_kwargs(self, *args, **kwargs):
-        result = super().get_form_kwargs(*args, **kwargs)
-        result["swap_actions"] = self.swap_actions
-        result["order"] = self.order
-        result["position"] = self.request.GET.get("position")
-        return result
+    def get_template_names(self):
+        return f"pretix_swap/presale/new_{self.steps.current}.html"
 
     def get_context_data(self, *args, **kwargs):
         ctx = super().get_context_data(*args, **kwargs)
         ctx["order"] = self.order
+        ctx["order_url"] = eventreverse(
+            self.request.event,
+            "presale:event.order",
+            kwargs={"order": self.order.code, "secret": self.order.secret},
+        )
+        ctx["position"] = self.position
+        ctx["swap_type"] = self.swap_type
+        ctx["details"] = self.get_cleaned_data_for_step("details")
         return ctx
 
-    @transaction.atomic
-    def form_valid(self, form):
-        self.form = form
-        instance = form.save()
+    def get_form_kwargs(self, step=None):
+        if step == "position":
+            return {"order": self.order}
+        if step == "type":
+            return {"swap_types": get_valid_swap_types(self.position)}
+        if step == "details":
+            return {"position": self.position, "swap_type": self.swap_type}
+        return {}
+
+    @transaction.atomic()
+    def done(self, form_list, *args, **kwargs):
+        position = self.position
+        swap_type = self.swap_type
+        details = self.get_cleaned_data_for_step("details")
+
+        # TODO more validation
+
+        instance = SwapRequest.objects.create(
+            position=position,
+            state=SwapRequest.States.REQUESTED,
+            swap_type=swap_type,
+            swap_method=details.get("swap_method"),
+            target_order=details.get("cancel_code"),
+            target_subevent=details.get("target_subevent"),
+        )
+        instance.position.order.log_action(
+            "pretix_swap.swap.request",
+            data={
+                "position": instance.position.pk,
+                "positionid": instance.position.positionid,
+                "swap_type": instance.swap_type,
+                "swap_method": instance.swap_method,
+            },
+        )
+        if instance.swap_type == SwapRequest.Types.SWAP:  # Only swaps are instantaneous
+            if details.get("swap_code"):
+                instance.swap_with(details.get("swap_code"))
+            elif instance.swap_method == SwapRequest.Methods.FREE:
+                instance.attempt_swap()
+        elif instance.target_order:
+            instance.target_order.log_action(
+                "pretix_swap.cancelation.offer_created",
+                data={
+                    "other_order": instance.position.order.code,
+                    "other_position": instance.position.id,
+                    "other_positionid": instance.position.positionid,
+                },
+            )
         if instance.state == SwapRequest.States.COMPLETED:
             messages.success(
                 self.request, _("We received your request and matched you directly!")
@@ -427,11 +513,10 @@ class SwapCreate(EventViewMixin, OrderDetailMixin, FormView):
                     "We will notify you then."
                 ),
             )
-        return super().form_valid(form)
-
-    def get_success_url(self):
-        return eventreverse(
-            self.request.event,
-            "presale:event.order",
-            kwargs={"order": self.order.code, "secret": self.order.secret},
+        return redirect(
+            eventreverse(
+                self.request.event,
+                "presale:event.order",
+                kwargs={"order": self.order.code, "secret": self.order.secret},
+            )
         )

@@ -83,26 +83,14 @@ def notifications_order_info_top(sender, request, order, **kwargs):
             }
         )
     elif event.settings.swap_orderpositions or event.settings.cancel_orderpositions:
-        from .utils import get_applicable_items
-
-        items = get_applicable_items(event)
-        if any(pos.item in items for pos in order.positions.all()):
-            if (
-                event.settings.swap_orderpositions
-                and event.settings.cancel_orderpositions
-            ):
-                text = _(
-                    "You can currently request to swap or cancel some of your ordered products!"
-                )
-            elif event.settings.swap_orderpositions:
-                text = _(
-                    "You can currently request to swap some of your ordered products!"
-                )
-            else:
-                text = _(
-                    "You can currently request to cancel some of your ordered products!"
-                )
-            notifications.append({"type": "info", "text": text})
+        notifications.append(
+            {
+                "type": "info",
+                "text": _(
+                    "You may be eligible to swap or cancel some of your ordered products."
+                ),
+            }
+        )
 
     result = ""
     for notification in notifications:
@@ -113,7 +101,6 @@ def notifications_order_info_top(sender, request, order, **kwargs):
 @receiver(order_info, dispatch_uid="swap_order_info")
 def order_info_bottom(sender, request, order, **kwargs):
     from .models import SwapRequest
-    from .utils import get_applicable_items
 
     event = request.event
 
@@ -133,8 +120,6 @@ def order_info_bottom(sender, request, order, **kwargs):
             swap_method=SwapRequest.Methods.SPECIFIC,
         ).exists()
         return template.render({"secret": order.code, "in_progress": in_progress})
-
-    items = get_applicable_items(event)
 
     states = SwapRequest.objects.filter(position__order=order).order_by(
         "position__positionid"
@@ -156,7 +141,8 @@ def order_info_bottom(sender, request, order, **kwargs):
     ctx = {
         "request": request,
         "positions": positions,
-        "items": items,
+        "actions_allowed": event.settings.swap_orderpositions
+        or event.settings.cancel_orderpositions,
         "specific_swap_allowed": event.settings.swap_orderpositions
         and event.settings.swap_orderpositions_specific,
     }
@@ -254,14 +240,8 @@ def swap_order_paid(order, sender, *args, **kwargs):
         return
 
     from .models import SwapRequest
-    from .utils import get_cancelable_items
 
     for position in order.positions.all():
-        items = [
-            i
-            for i in get_cancelable_items(position.item)
-            if i.default_price <= position.price
-        ]
         # First, check if there are specific cancelation request, if
         # if not order.event.settings.cancel_orderpositions_specific:
         specific_request = SwapRequest.objects.filter(
@@ -270,7 +250,15 @@ def swap_order_paid(order, sender, *args, **kwargs):
             swap_method=SwapRequest.Methods.SPECIFIC,
             target_order=order,
             position__order__status="p",
-        ).first()
+            position__item=position.item,
+            position__subevent=position.subevent,
+        )
+        if position.variation:
+            specific_request = specific_request.filter(
+                position__variation=position.variation
+            )
+        specific_request = specific_request.first()
+
         if specific_request:
             try:
                 specific_request.cancel_for(position)
@@ -285,9 +273,12 @@ def swap_order_paid(order, sender, *args, **kwargs):
             state=SwapRequest.States.REQUESTED,
             swap_type=SwapRequest.Types.CANCELATION,
             swap_method=SwapRequest.Methods.FREE,
-            position__item__in=items,
             position__order__status="p",
+            position__item=position.item,
+            position__subevent=position.subevent,
         )
+        if position.variation:
+            requests = requests.filter(position__variation=position.variation)
         if not requests:
             order.log_action(
                 "pretix_swap.cancelation.no_partner",

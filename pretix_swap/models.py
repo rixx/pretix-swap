@@ -7,6 +7,8 @@ from django_scopes import ScopedManager
 from i18nfield.fields import I18nCharField
 from pretix.base.services.orders import OrderChangeManager, OrderError, cancel_order
 
+from .utils import can_be_canceled, can_be_swapped
+
 
 class SwapGroup(models.Model):
     class Types(models.TextChoices):
@@ -122,12 +124,13 @@ class SwapRequest(models.Model):
 
     def get_notification(self):
         texts = {
-            (self.Types.SWAP, self.States.REQUESTED, self.Methods.FREE): _(
-                "You have requested to swap this prodcut. Please wait until somebody requests a matching swap."
-            ),
-            (self.Types.SWAP, self.States.REQUESTED, self.Methods.SPECIFIC,): _(
-                "You have requested to swap this product with somebody specific. Please wait until they enter the swap code that you have given them."
-            ),
+            (self.Types.SWAP, self.States.REQUESTED, self.Methods.FREE): str(_(
+                "You have requested to swap this product. Please wait until somebody with a matching ticket ({self.target_subevent}) requests a matching swap."
+            )).format(self=self),
+            (self.Types.SWAP, self.States.REQUESTED, self.Methods.SPECIFIC,): str(_(
+                "You have requested to swap this product with somebody specific ({self.target_subevent}). "
+                "Please wait until they enter the swap code that you have given them."
+            )).fomat(self=self),
             (self.Types.SWAP, self.States.COMPLETED, self.Methods.FREE): _(
                 "You have completed the swap of this product."
             ),

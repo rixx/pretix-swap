@@ -1,0 +1,29 @@
+{% extends "pretixpresale/event/base.html" %}
+{% load i18n %}
+{% load bootstrap3 %}
+{% block title %}
+    {% for step in checkout_flow %}
+        {% if request.resolver_match.kwargs.step == step.identifier %}
+            {% blocktrans trimmed with label=step.label current=forloop.counter total=checkout_flow|length %}
+            Step {{ current }} of {{ total }}: {{ label }}
+            {% endblocktrans %} –
+        {% endif %}
+    {% endfor %}
+    {% trans "Swap" %}
+{% endblock %}
+
+
+{% block content %}
+
+    <h2>{% trans "Swap request" %} <small>Step {{ wizard.steps.step1 }} of {{ wizard.steps.count }}</small></h2>
+    <div class="panel-group">
+        <br>
+        <div class="clearfix"></div>
+    </div>
+    <form method="post" class="form form-horizontal">
+        {% csrf_token %}
+        {{ wizard.management_form }}
+        {% block inner %}
+        {% endblock %}
+    </form>
+{% endblock %}
