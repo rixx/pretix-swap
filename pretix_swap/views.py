@@ -533,12 +533,12 @@ class SwapCreate(EventViewMixin, OrderDetailMixin, SessionWizardView):
 
     def get_form(self, step=None, data=None, files=None):
         if (
-            step == "refund"
+            step == "refund" and HAS_REFUND_HANDLING
         ):  # Called only when refund is *not* the current step, for final validation:
             return NewRefundForm(
                 self.storage.get_step_data("refund"), prefix="refund-banktransfer"
             )
-        if self.steps.current == "refund":
+        if self.steps.current == "refund" and HAS_REFUND_HANDLING:
             return NewRefundForm(self.request.POST, prefix="refund-banktransfer")
         return super().get_form(step=step, data=data, files=files)
 
