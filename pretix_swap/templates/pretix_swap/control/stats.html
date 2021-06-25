@@ -30,8 +30,8 @@
                 <thead>
                 <tr>
                     <th></th>
-                    {% for subevent in subevents %}
-                        <th class="text-right">{% trans "Available in quota" %} {% if subevent %}<br>{{ subevent.name }}{% endif %}</th>
+                    {% for item in items %}
+                        <th class="text-right">{% trans "Available in quota" %} {% if subevent %}<br>{{ item.name }}{% endif %}</th>
                     {% endfor %}
                     <th class="text-right">{% trans "Orders waiting for approval" %}</th>
                     <th class="text-right">{% trans "Orders waiting for payment" %}</th>
@@ -40,21 +40,19 @@
                 </tr>
                 </thead>
                 <tbody>
-                    {% for product in by_products %}
+                    {% for subevent in by_subevents %}
                     <tr>
                         <th>
-                            <a href="{% eventurl request.event "control:event.item" organizer=request.organizer.slug event=request.event.slug item=product.item.id %}">
-                            {{ product.item }}
-                            </a>
+                            {{ subevent.subevent }}
                         </th>
-                        {% for avail in product.available_in_quota %}
+                        {% for avail in subevent.available_in_quota %}
                             <td class="text-right">{{ avail }}</td>
                         {% endfor %}
-                        <td class="text-right">{{ product.approval_orders }}</td>
-                        <td class="text-right">{{ product.pending_orders }}</td>
-                        <td class="text-right">{{ product.open_cancelation_requests }}</td>
+                        <td class="text-right">{{ subevent.approval_orders }}</td>
+                        <td class="text-right">{{ subevent.pending_orders }}</td>
+                        <td class="text-right">{{ subevent.open_cancelation_requests }}</td>
                         <td class="text-right">
-                            {% if product.form_field %}{% bootstrap_field product.form_field layout="inline" %}{% endif %}
+                            {% if subevent.form_field %}{% bootstrap_field subevent.form_field layout="inline" %}{% endif %}
                         </td>
                     </tr>
                     {% empty %}
@@ -88,9 +86,7 @@
                 {% for line in overview %}
                 <tr>
                     <td>
-                    <a href="{% eventurl request.event "control:event.item" organizer=request.organizer.slug event=request.event.slug item=line.item.id %}">
-                    {{ line.item }}
-                    </a>
+                        {{ line.subevent }}
                     </td>
                     <td class="text-right">{{ line.open_swap_requests }}</td>
                     <td class="text-right">{{ line.completed_swap_requests }}</td>

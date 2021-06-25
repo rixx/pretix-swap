@@ -367,12 +367,12 @@ class SwapWizardConfirmForm(forms.Form):
 
 
 class CancelationForm(forms.Form):
-    def __init__(self, *args, items=None, **kwargs):
+    def __init__(self, *args, subevents=None, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.items = items
-        for item in items:
-            self.fields[f"item_{item['item'].pk}"] = forms.IntegerField(
+        self.subevents = subevents
+        for subevent in subevents:
+            self.fields[f"subevent_{subevent['subevent'].pk}"] = forms.IntegerField(
                 min_value=0,
                 required=False,
                 label="",

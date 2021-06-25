@@ -1,5 +1,4 @@
 from django.db.models import Q
-from django.utils.translation import ugettext_lazy as _
 
 
 def get_target_subevents(position, swap_type):

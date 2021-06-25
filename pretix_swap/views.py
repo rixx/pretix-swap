@@ -1,4 +1,3 @@
-from django import forms
 from django.contrib import messages
 from django.db import transaction
 from django.db.models import Count
@@ -45,17 +44,18 @@ class SwapStats(EventPermissionRequiredMixin, FormView):
     def get_context_data(self, *args, **kwargs):
         ctx = super().get_context_data(*args, **kwargs)
         ctx["overview"] = self.requests_by_state
-        products = self.requests_by_product
+        by_subevents = self.requests_by_date
         form = ctx["form"]
-        for line in products:
-            line["form_field"] = form[f"item_{line['item'].pk}"]
-        ctx["by_products"] = products
+        for line in by_subevents:
+            line["form_field"] = form[f"subevent_{line['subevent'].pk}"]
+        ctx["by_subevents"] = by_subevents
         ctx["subevents"] = self.subevents
+        ctx["items"] = self.items
         return ctx
 
     def get_form_kwargs(self):
         result = super().get_form_kwargs()
-        result["items"] = self.requests_by_product
+        result["subevents"] = self.requests_by_date
         return result
 
     def get_success_url(self):
@@ -71,16 +71,16 @@ class SwapStats(EventPermissionRequiredMixin, FormView):
     def form_valid(self, form):
         orders_approved = 0
         data = form.cleaned_data
-        for row in self.requests_by_product:
+        for row in self.requests_by_date:
             approvable = row["approval_orders"]
-            to_approve = data.get(f"item_{row['item'].pk}")
+            to_approve = data.get(f"subevent_{row['subevent'].pk}")
             if not approvable or not to_approve:
                 continue
             positions = OrderPosition.objects.filter(
                 order__status="n",  # Pending orders with and without approval
                 order__event=self.request.event,
                 order__require_approval=True,
-                item=row["item"],
+                subevent=row["subevent"],
             )
             if self.request.event.settings.cancel_orderpositions_verified_only:
                 positions = positions.filter(order__email_known_to_work=True)
@@ -129,79 +129,98 @@ class SwapStats(EventPermissionRequiredMixin, FormView):
         return list(self.request.event.subevents.all()) or [None]
 
     @cached_property
-    def requests_by_product(self):
-        requests = SwapRequest.objects.filter(
+    def requests(self):
+        return SwapRequest.objects.filter(
             position__order__event=self.request.event,
             state=SwapRequest.States.REQUESTED,
             partner__isnull=True,
             position__order__status="p",  # Should already be the case, but hey
             swap_type=SwapRequest.Types.CANCELATION,
         ).select_related("position", "position__item")
-        positions = OrderPosition.objects.filter(
+
+    @cached_property
+    def positions(self):
+        return OrderPosition.objects.filter(
             order__status="n",  # Pending orders with and without approval
             order__event=self.request.event,
         )
-        items = list(
-            set(requests.values_list("position__item", flat=True))
-            | set(positions.values_list("item", flat=True))
+
+    @cached_property
+    def items(self):
+        items = sorted(
+            list(
+                set(self.requests.values_list("position__item", flat=True))
+                | set(self.positions.values_list("item", flat=True))
+            )
         )
+        items = [self.request.event.items.get(pk=item) for item in items]
+        return items
+
+    @cached_property
+    def requests_by_date(self):
+        requests = self.requests
+        positions = self.positions
+        dates = self.subevents
+        items = self.items
         result = []
-        for item in items:
-            item = self.request.event.items.get(pk=item)
+        for date in dates:
             availabilities = []
-            for subevent in self.subevents:
-                availability = item.check_quotas(subevent=subevent)
+            for item in items:
+                availability = item.check_quotas(subevent=date)
                 if not availability[1] and availability[0] == 100:
                     availability = "∞"
                 else:
                     availability = availability[1]
                 availabilities.append(availability)
-            result.append(
-                {
-                    "item": item,
-                    "available_in_quota": availabilities,
-                    "open_cancelation_requests": requests.filter(
-                        position__item=item,
-                    ).count(),
-                    "approval_orders": positions.filter(
-                        item=item, order__require_approval=True
-                    ).count(),
-                    "pending_orders": positions.filter(
-                        item=item, order__require_approval=False
-                    ).count(),
-                }
-            )
+            line = {
+                "subevent": date,
+                "available_in_quota": availabilities,
+                "open_cancelation_requests": requests.filter(
+                    position__subevent=date,
+                ).count(),
+                "approval_orders": positions.filter(
+                    subevent=date, order__require_approval=True
+                ).count(),
+                "pending_orders": positions.filter(
+                    subevent=date, order__require_approval=False
+                ).count(),
+            }
+            if (
+                line["open_cancelation_requests"]
+                or line["approval_orders"]
+                or line["pending_orders"]
+            ):
+                result.append(line)
         return result
 
     @cached_property
     def requests_by_state(self):
         requests = SwapRequest.objects.filter(position__order__event=self.request.event)
-        items = list(set(requests.values_list("position__item", flat=True)))
+        subevents = self.request.event.subevents.all()
         result = []
-        for item in items:
-            item = self.request.event.items.get(pk=item)
+        for subevent in subevents:
             result.append(
                 {
-                    "item": item,
+                    "subevent": subevent,
                     "open_swap_requests": requests.filter(
                         swap_type=SwapRequest.Types.SWAP,
                         state=SwapRequest.States.REQUESTED,
-                        position__item=item,
+                        position__subevent=subevent,
                     ).count(),
                     "completed_swap_requests": requests.filter(
                         swap_type=SwapRequest.Types.SWAP,
                         state=SwapRequest.States.COMPLETED,
-                        position__item=item,
+                        position__subevent=subevent,
                     ).count(),
                     "open_cancelation_requests": requests.filter(
                         swap_type=SwapRequest.Types.CANCELATION,
                         state=SwapRequest.States.REQUESTED,
-                        position__item=item,
+                        position__subevent=subevent,
                     ).count(),
                     "completed_cancelation_requests": requests.filter(
                         swap_type=SwapRequest.Types.CANCELATION,
                         state=SwapRequest.States.COMPLETED,
-                        position__item=item,
+                        position__subevent=subevent,
                     ).count(),
                 }
             )
