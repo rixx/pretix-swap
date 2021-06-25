@@ -35,6 +35,20 @@ from .forms import (
 from .models import SwapApproval, SwapGroup, SwapRequest
 from .utils import get_valid_swap_types
 
+try:
+    from refund_banktransfer.payment import RefundBanktransfer
+
+    NewRefundForm = RefundBanktransfer.NewRefundForm
+    HAS_REFUND_HANDLING = True
+except ImportError:
+    from django import forms
+
+    class NewRefundForm(forms.Form):
+        pass
+
+    HAS_REFUND_HANDLING = False
+    RefundBanktransfer = None
+
 
 class SwapStats(EventPermissionRequiredMixin, FormView):
     permission = "can_change_event_settings"
@@ -419,6 +433,14 @@ def condition_details(wizard):
     return False
 
 
+def condition_refund(wizard):
+    return (
+        HAS_REFUND_HANDLING
+        and wizard.swap_type == SwapRequest.Types.CANCELATION
+        and wizard.request.event.settings.swap_cancellation_fee
+    )
+
+
 class SwapCreate(EventViewMixin, OrderDetailMixin, SessionWizardView):
 
     form_list = [
@@ -428,12 +450,17 @@ class SwapCreate(EventViewMixin, OrderDetailMixin, SessionWizardView):
             "details",
             SwapWizardDetailsForm,
         ),  # contains swap method if possible, swap code, subevent always
+        (
+            "refund",
+            NewRefundForm,
+        ),
         ("confirm", SwapWizardConfirmForm),
     ]
     condition_dict = {
         "position": condition_position,
         "details": condition_details,
         "type": condition_type,
+        "refund": condition_refund,
     }
 
     @cached_property
@@ -475,6 +502,24 @@ class SwapCreate(EventViewMixin, OrderDetailMixin, SessionWizardView):
         ctx["position"] = self.position
         ctx["swap_type"] = self.swap_type
         ctx["details"] = self.get_cleaned_data_for_step("details")
+        if self.steps.current == "refund" and HAS_REFUND_HANDLING:
+            ctx["rendered_form"] = RefundBanktransfer(
+                self.request.event
+            ).new_refund_presale_form_render(
+                request=self.request,
+                order=self.order,
+                fee=-self.request.event.settings.swap_cancellation_fee,
+                data=self.request.POST,
+            )
+        if self.steps.current == "confirm" and HAS_REFUND_HANDLING:
+            ctx["rendered_confirm"] = RefundBanktransfer(
+                self.request.event
+            ).new_refund_presale_form_confirm_render(
+                request=self.request,
+                order=self.order,
+                fee=-self.request.event.settings.swap_cancellation_fee,
+                data=self.storage.get_step_data("refund"),
+            )
         return ctx
 
     def get_form_kwargs(self, step=None):
@@ -485,6 +530,17 @@ class SwapCreate(EventViewMixin, OrderDetailMixin, SessionWizardView):
         if step == "details":
             return {"position": self.position, "swap_type": self.swap_type}
         return {}
+
+    def get_form(self, step=None, data=None, files=None):
+        if (
+            step == "refund"
+        ):  # Called only when refund is *not* the current step, for final validation:
+            return NewRefundForm(
+                self.storage.get_step_data("refund"), prefix="refund-banktransfer"
+            )
+        if self.steps.current == "refund":
+            return NewRefundForm(self.request.POST, prefix="refund-banktransfer")
+        return super().get_form(step=step, data=data, files=files)
 
     def form_invalid(self, message):
         messages.error(self.request, message)
@@ -525,15 +581,23 @@ class SwapCreate(EventViewMixin, OrderDetailMixin, SessionWizardView):
                 instance.swap_with(details.get("swap_code"))
             elif instance.swap_method == SwapRequest.Methods.FREE:
                 instance.attempt_swap()
-        elif instance.target_order:
-            instance.target_order.log_action(
-                "pretix_swap.cancelation.offer_created",
-                data={
-                    "other_order": instance.position.order.code,
-                    "other_position": instance.position.id,
-                    "other_positionid": instance.position.positionid,
-                },
-            )
+        else:
+            if HAS_REFUND_HANDLING:
+                RefundBanktransfer(self.request.event).new_refund_presale_form_process(
+                    request=self.request,
+                    order=self.order,
+                    fee=-self.request.event.settings.swap_cancellation_fee,
+                    data=self.storage.get_step_data("refund"),
+                )
+            if instance.target_order:
+                instance.target_order.log_action(
+                    "pretix_swap.cancelation.offer_created",
+                    data={
+                        "other_order": instance.position.order.code,
+                        "other_position": instance.position.id,
+                        "other_positionid": instance.position.positionid,
+                    },
+                )
         if instance.state == SwapRequest.States.COMPLETED:
             messages.success(
                 self.request, _("We received your request and matched you directly!")
