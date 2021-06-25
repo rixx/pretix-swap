@@ -191,7 +191,7 @@ class SwapWizardDetailsForm(forms.Form):
     - method (depending on swap_type and allowed actions)
     - target_order (when the type is cancel, will only show when the non-free method is chosen)
     - swap_code (when the type is swap, will only show when the non-free method is chosen)
-    - target_subevent (always present)
+    - target_subevent (when the type is swap)
     """
 
     def __init__(self, *args, position, swap_type, **kwargs):
@@ -199,6 +199,14 @@ class SwapWizardDetailsForm(forms.Form):
         self.swap_type = swap_type
         self.event = position.order.event
         super().__init__(*args, **kwargs)
+        if self.swap_type == SwapRequest.Types.SWAP:
+            self.fields["target_subevent"] = forms.ModelChoiceField(
+                required=True,
+                label=_("Date"),
+                queryset=get_target_subevents(self.position, self.swap_type),
+                widget=forms.RadioSelect,
+                empty_label=None,
+            )
         if (
             swap_type == SwapRequest.Types.SWAP
             and self.event.settings.swap_orderpositions_specific
@@ -248,13 +256,6 @@ class SwapWizardDetailsForm(forms.Form):
                     "A code will be created after you chose to swap with a specific person and once you send your swap request."
                 ),
             )
-        self.fields["target_subevent"] = forms.ModelChoiceField(
-            required=True,
-            label=_("Date"),
-            queryset=get_target_subevents(self.position, self.swap_type),
-            widget=forms.RadioSelect,
-            empty_label=None,
-        )
 
     def clean(self):
         cleaned_data = super().clean()

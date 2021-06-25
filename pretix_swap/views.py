@@ -388,6 +388,17 @@ def condition_type(wizard):
     return len(actions) > 1
 
 
+def condition_details(wizard):
+    swap_type = wizard.swap_type
+    if not swap_type:
+        return False
+    if swap_type == SwapRequest.Types.SWAP or swap_type[0] == SwapRequest.Types.SWAP:
+        return True  # Always have to select a date when swapping
+    if wizard.request.event.settings.cancel_orderpositions_specific:
+        return True  # Method field present
+    return False
+
+
 class SwapCreate(EventViewMixin, OrderDetailMixin, SessionWizardView):
 
     form_list = [
@@ -401,6 +412,7 @@ class SwapCreate(EventViewMixin, OrderDetailMixin, SessionWizardView):
     ]
     condition_dict = {
         "position": condition_position,
+        "details": condition_details,
         "type": condition_type,
     }
 
