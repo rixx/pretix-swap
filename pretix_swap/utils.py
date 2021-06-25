@@ -29,12 +29,12 @@ def get_valid_swap_types(position):
     result = []
     event = position.order.event
     if event.settings.swap_orderpositions and SwapRequest.Types.SWAP in actions:
-        result.append((SwapRequest.Types.SWAP, _("Request a team/festival date swap")))
+        result.append(SwapRequest.Types.SWAP)
     if (
         event.settings.cancel_orderpositions
         and SwapRequest.Types.CANCELATION in actions
     ):
-        result.append((SwapRequest.Types.CANCELATION, _("Request to sell your ticket")))
+        result.append(SwapRequest.Types.CANCELATION)
     return result
 
 

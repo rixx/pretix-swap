@@ -157,8 +157,12 @@ class SwapWizardPositionForm(forms.Form):
     def __init__(self, *args, order, **kwargs):
         self.order = order
         super().__init__(*args, **kwargs)
+        text = {
+            SwapRequest.Types.SWAP: _("Request a team/festival date swap"),
+            SwapRequest.Types.CANCELATION: _("Request to sell your ticket"),
+        }
         relevant_positions = [
-            position
+            (position, text[position])
             for position in order.positions.all()
             if get_valid_swap_types(position)
         ]

@@ -135,7 +135,7 @@ class SwapRequest(models.Model):
                     "You have requested to swap this product with somebody specific ({self.target_subevent}). "
                     "Please wait until they enter the swap code that you have given them."
                 )
-            ).fomat(self=self),
+            ).format(self=self),
             (self.Types.SWAP, self.States.COMPLETED, self.Methods.FREE): _(
                 "You have completed the swap of this product."
             ),
