@@ -271,9 +271,9 @@ class SwapRequest(models.Model):
             raise Exception("Order position canceling is currently not allowed")
 
         if (
-            self.position.subevent != other.position.subevent
-            or self.position.item != other.position.item
-            or self.position.variation != other.position.variation
+            self.position.subevent != other.subevent
+            or self.position.item != other.item
+            or self.position.variation != other.variation
         ):
             raise Exception("Cancelation failed, orders are not equal")
         if not can_be_canceled(self.event, self.position.item, self.position.subevent):
@@ -297,7 +297,7 @@ class SwapRequest(models.Model):
                 try_auto_refund=True,
             )
         self.state = self.States.COMPLETED
-        self.target_order = other  # Should be set already, let's just make sure
+        self.target_order = other.order  # Should be set already, let's just make sure
         self.save()
         self.position.order.log_action(
             "pretix_swap.cancelation.complete",
