@@ -28,8 +28,14 @@
                             {# TODO allow creation if all others are completed #}
                         {% endfor %}
                     {% endif %}
-                    {% if position.no_active_requests and actions_allowed %}
-                        {% trans "You can request to swap or cancel this product." %}
+                    {% if position.no_active_requests and position.actions_allowed %}
+                        {% if position.actions_allowed|length == 2 %}
+                            {% trans "You can request to swap or cancel this product." %}
+                        {% elif position.actions_allowed == "s" %}
+                            {% trans "You can request to swap this product." %}
+                        {% elif position.actions_allowed == "c" %}
+                            {% trans "You can request to cancel this product." %}
+                        {% endif %}
                         <a href="{% eventurl request.event "plugins:pretix_swap:swap.new" order=position.order.code secret=position.order.secret %}?position={{ position.pk }}" class="btn btn-default">
                             <i class="fa fa-plus"></i> {% trans "New request" %}
                         </a>

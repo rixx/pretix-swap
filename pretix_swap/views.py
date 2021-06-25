@@ -1,3 +1,4 @@
+from django import forms
 from django.contrib import messages
 from django.db import transaction
 from django.db.models import Count
@@ -466,19 +467,28 @@ class SwapCreate(EventViewMixin, OrderDetailMixin, SessionWizardView):
             return {"position": self.position, "swap_type": self.swap_type}
         return {}
 
+    def form_invalid(self, message):
+        messages.error(self.request, message)
+        self.storage.current_step = self.steps.first
+        return redirect(self.request.path)
+
     @transaction.atomic()
     def done(self, form_list, *args, **kwargs):
         position = self.position
         swap_type = self.swap_type
-        details = self.get_cleaned_data_for_step("details")
+        details = self.get_cleaned_data_for_step("details") or {}
+        swap_method = details.get("swap_method", SwapRequest.Methods.FREE)
 
         # TODO more validation
+        valid_swap_types = get_valid_swap_types(position)
+        if swap_type not in valid_swap_types:
+            return self.form_invalid(_("Invalid request!"))
 
         instance = SwapRequest.objects.create(
             position=position,
             state=SwapRequest.States.REQUESTED,
             swap_type=swap_type,
-            swap_method=details.get("swap_method"),
+            swap_method=swap_method,
             target_order=details.get("cancel_code"),
             target_subevent=details.get("target_subevent"),
         )

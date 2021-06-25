@@ -8,6 +8,8 @@ from pretix.base.signals import logentry_display, logentry_object_link, order_pa
 from pretix.control.signals import nav_event, nav_event_settings, order_search_forms
 from pretix.presale.signals import order_info, order_info_top
 
+from .utils import get_valid_swap_types
+
 BOOLEAN_SETTINGS = [
     "swap_orderpositions",
     "swap_orderpositions_specific",
@@ -104,7 +106,7 @@ def order_info_bottom(sender, request, order, **kwargs):
 
     event = request.event
 
-    if not order.status == "p":
+    if order.status != "p":
         if order.status != "n" or not order.require_approval:
             return
         if not (
@@ -137,15 +139,14 @@ def order_info_bottom(sender, request, order, **kwargs):
             state=SwapRequest.States.REQUESTED
         ).exists()
         position.ordered_requests = position.swap_states.order_by("requested")
-    template = get_template("pretix_swap/presale/order_box.html")
+        position.actions_allowed = get_valid_swap_types(position)
     ctx = {
         "request": request,
         "positions": positions,
-        "actions_allowed": event.settings.swap_orderpositions
-        or event.settings.cancel_orderpositions,
         "specific_swap_allowed": event.settings.swap_orderpositions
         and event.settings.swap_orderpositions_specific,
     }
+    template = get_template("pretix_swap/presale/order_box.html")
     return template.render(ctx)
 
 
