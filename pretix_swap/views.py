@@ -438,6 +438,8 @@ def condition_refund(wizard):
         HAS_REFUND_HANDLING
         and wizard.swap_type == SwapRequest.Types.CANCELATION
         and wizard.request.event.settings.swap_cancellation_fee
+        and "refund-banktransfer" in wizard.request.event.get_payment_providers()
+        and RefundBanktransfer(wizard.request.event).get_refund_amount(wizard.order)
     )
 
 
