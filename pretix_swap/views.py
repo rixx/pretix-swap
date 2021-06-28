@@ -458,8 +458,8 @@ class SwapCreate(EventViewMixin, OrderDetailMixin, SessionWizardView):
     ]
     condition_dict = {
         "position": condition_position,
-        "details": condition_details,
         "type": condition_type,
+        "details": condition_details,
         "refund": condition_refund,
     }
 
@@ -478,6 +478,8 @@ class SwapCreate(EventViewMixin, OrderDetailMixin, SessionWizardView):
         actions = get_valid_swap_types(self.position)
         if len(actions) == 1:
             return actions[0]
+        if not self.steps.current or (self.steps.current in ("position", "type")):
+            return None
         try:
             return self.get_cleaned_data_for_step("type").get("swap_type")
         except Exception:  # not filled in or not valid
