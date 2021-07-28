@@ -79,6 +79,7 @@
                 <th class="text-right">{% trans "Waiting swaps" %}</th>
                 <th class="text-right">{% trans "Completed swaps" %}</th>
                 <th class="text-right">{% trans "Waiting cancelations" %}</th>
+                <th class="text-right">{% trans "Approved cancelations" %}</th>
                 <th class="text-right">{% trans "Completed cancelations" %}</th>
             </tr>
             </thead>
@@ -91,6 +92,7 @@
                     <td class="text-right">{{ line.open_swap_requests }}</td>
                     <td class="text-right">{{ line.completed_swap_requests }}</td>
                     <td class="text-right">{{ line.open_cancelation_requests }}</td>
+                    <td class="text-right">{{ line.pending_cancelation_requests }}</td>
                     <td class="text-right">{{ line.completed_cancelation_requests }}</td>
                 </tr>
                 {% endfor %}

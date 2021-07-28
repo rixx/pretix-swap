@@ -150,7 +150,7 @@ class SwapStats(EventPermissionRequiredMixin, FormView):
             partner__isnull=True,
             position__order__status="p",  # Should already be the case, but hey
             swap_type=SwapRequest.Types.CANCELATION,
-        ).select_related("position", "position__item")
+        ).select_related("position", "position__item").distinct()
 
     @cached_property
     def positions(self):
@@ -193,11 +193,13 @@ class SwapStats(EventPermissionRequiredMixin, FormView):
                     position__subevent=date,
                 ).count(),
                 "approval_orders": positions.filter(
-                    subevent=date, order__require_approval=True
-                ).count(),
+                    subevent=date, order__require_approval=True,
+                    order__swap_approval__isnull=True,
+                ).distinct().count(),
                 "pending_orders": positions.filter(
-                    subevent=date, order__require_approval=False
-                ).count(),
+                    subevent=date, order__require_approval=False,
+                    order__swap_approval__isnull=False,
+                ).distinct().count(),
             }
             if (
                 line["open_cancelation_requests"]
@@ -230,7 +232,14 @@ class SwapStats(EventPermissionRequiredMixin, FormView):
                         swap_type=SwapRequest.Types.CANCELATION,
                         state=SwapRequest.States.REQUESTED,
                         position__subevent=subevent,
-                    ).count(),
+                        position__order__swap_approval__isnull=True,
+                    ).distinct().count(),
+                    "pending_cancelation_requests": requests.filter(
+                        swap_type=SwapRequest.Types.CANCELATION,
+                        state=SwapRequest.States.REQUESTED,
+                        position__subevent=subevent,
+                        position__order__swap_approval__isnull=False,
+                    ).distinct().count(),
                     "completed_cancelation_requests": requests.filter(
                         swap_type=SwapRequest.Types.CANCELATION,
                         state=SwapRequest.States.COMPLETED,
