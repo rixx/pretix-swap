@@ -1,0 +1,5 @@
+[plugin]
+package = "pretix-swap"
+modules = [ "pretix_swap" ]
+marketplace_name = "swap"
+
