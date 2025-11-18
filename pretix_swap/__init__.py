@@ -1,11 +1,8 @@
 from django.utils.translation import gettext_lazy
 
-try:
-    from pretix.base.plugins import PluginConfig
-except ImportError:
-    raise RuntimeError("Please use pretix 2.7 or above to run this plugin!")
+from pretix.base.plugins import PluginConfig
 
-__version__ = "0.3.2"
+__version__ = "0.4.0"
 
 
 class PluginApp(PluginConfig):
